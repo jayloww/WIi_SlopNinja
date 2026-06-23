@@ -32,18 +32,51 @@ function zip(){
 function back(){
 	var audio = document.getElementById("back");
 	audio.play();
+	var music = document.getElementById("bg-music");
+	music.play();
 }
 
-// date
+// date & time
 const monthNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const d = new Date();
 
-weekday = monthNames[d.getDay()];
-day = d.getDate();
-month = d.getMonth() + 1;
-date = weekday + " " + month + "/" + day;
+function updateDateTime() {
+	const now = new Date();
+	weekday = monthNames[now.getDay()];
+	day = now.getDate();
+	month = now.getMonth() + 1;
+	date = weekday + " " + month + "/" + day;
+
+	let hours = now.getHours();
+	const minutes = now.getMinutes().toString().padStart(2, "0");
+	const ampm = hours >= 12 ? "PM" : "AM";
+	hours = hours % 12 || 12;
+	menuTime = hours + ":" + minutes + " " + ampm;
+
+	$(document).find(".date span").text(date);
+	$(document).find(".menu-time").text(menuTime);
+}
+
+function fitChannelGrid() {
+	var $top = $(".top-section");
+	var $grid = $(".channels");
+	if (!$top.length || !$grid.length) return;
+
+	$grid.css("transform", "none");
+	var scaleX = ($top.width() - 160) / $grid.outerWidth();
+	var scaleY = ($top.height() - 40) / $grid.outerHeight();
+	var scale = Math.min(scaleX, scaleY);
+
+	$grid.css({
+		transform: "scale(" + scale + ")",
+		transformOrigin: "center center"
+	});
+}
+
+updateDateTime();
+setInterval(updateDateTime, 1000);
 
 $( document ).ready(function() {
+  $(window).on("resize", fitChannelGrid);
   // go to main menu when channel is clicked
 	$("body").on("click", ".occupied .hover", function(){
 		var centerX = $(this).offset().left + $(this).width() / 2;

@@ -29,6 +29,9 @@ body.channel-splash {
   padding-top: 3vh;
   padding-bottom: 0;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bottom-section {
@@ -38,24 +41,22 @@ body.channel-splash {
 }
 
 .col {
-  width: 24%;
-  height: 100%;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   box-sizing: border-box;
 }
 
 .col.first {
-  margin-left: 20px;
+  margin-left: 0;
 }
 
 .channel-icon {
   display: block;
-  width: 20.2vw;
-  height: 11.1vw;
-  margin-top: 2vh;
+  width: 387px;
+  height: 213px;
   position: relative;
-  margin-left: auto;
-  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .channel-icon.blank {
@@ -67,8 +68,8 @@ body.channel-splash {
   position: absolute;
   top: 0;
   left: 0;
-  width: 20.2vw;
-  height: 11.1vw;
+  width: 100%;
+  height: 100%;
   content: '';
   background-image: url(../images/channel-wiilogo.png);
   background-size: 100% 100%;
@@ -78,8 +79,8 @@ body.channel-splash {
   position: absolute;
   top: 0;
   left: 0;
-  width: 20.2vw;
-  height: 11.1vw;
+  width: 100%;
+  height: 100%;
   content: '';
   background-image: url(../images/channel-border.png);
   background-size: 100% 100%;
@@ -89,8 +90,8 @@ body.channel-splash {
   position: absolute;
   top: 0;
   left: 0;
-  width: 20.2vw;
-  height: 11.1vw;
+  width: 100%;
+  height: 100%;
   content: '';
   background-image: url(../images/channel-hover.png);
   background-size: 100% 100%;
@@ -115,9 +116,10 @@ body.channel-splash {
 }
 
 .channel-icon img {
-  display: inherit;
-  width: inherit;
-  height: inherit;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   /* TODO: does not work in Edge/IE11 and has shoddy browser support */
   -webkit-clip-path: polygon(2% 7%, 6% 2%, 52% 1%, 95% 3%, 98% 8%, 100% 49%, 98% 92%, 95% 97%, 50% 99%, 5% 97%, 2% 93%, 0 50%);
   clip-path: polygon(2% 7%, 6% 2%, 52% 1%, 95% 3%, 98% 8%, 100% 49%, 98% 92%, 95% 97%, 50% 99%, 5% 97%, 2% 93%, 0 50%);
@@ -129,6 +131,32 @@ body.channel-splash {
   height: 220px;
   margin-left: auto;
   margin-right: auto;
+  position: relative;
+}
+
+.bottom-title::before {
+  content: '';
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 340px;
+  height: 72px;
+  background: #f4f4f4;
+  z-index: 1;
+}
+
+.menu-time {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'DS-Digital', monospace;
+  font-size: 58px;
+  color: #7a7c80;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  z-index: 2;
 }
 
 .left-button {
@@ -166,9 +194,10 @@ body.channel-splash {
   width: 100px;
   height: 105px;
   position: absolute;
-  bottom: 60px;
-  right: 60px;
+  bottom: 57px;
+  right: 65px;
   background-size: 100% 100%;
+  background-position: center center;
   z-index: 999;
 }
 
@@ -476,63 +505,10 @@ body.channel-splash {
   }
 }
 
-@media only screen and (max-height: 640px) {
-  .channels {
-    transform: scale(0.9);
-  }
-}
-
-/*
-@media only screen and (max-height: 600px) {
-  .channels {
-    transform: scale(0.8);
-		transform-origin: top;
-  }
-}
-
-@media only screen and (max-height: 524px) {
-  .channels {
-    transform: scale(0.7);
-		transform-origin: top;
-  }
-} */
-
-/* widescreen fixes */
-
-@media only screen and (min-width: 1720px) {
-  .top-section {
-    transform: scale(0.9);
-    padding-top: 0em !important;
-  }
-}
-
-/******************/
-/*    testing     */
-/* needs 2b moved */
-/******************/
-
 .channels {
+  display: flex;
+  gap: 12px;
   max-width: 1920px;
   margin-left: auto;
   margin-right: auto;
-}
-
-@media only screen and (min-width: 1920px) {
-  .channel-icon, .channel-icon *, .channel-icon:after, .channel-icon:before {
-    width: 387px !important;
-    height: 213px !important;
-  }
-}
-
-@media only screen and (max-height: 47vw) {
-  .channel-icon, .channel-icon *, .channel-icon:after, .channel-icon:before {
-    width: 40vh !important;
-    height: 22.5vh !important;
-    max-width: 439px !important;
-    max-height: 247px !important;
-  }
-
-  .channels-container {
-
-  }
 }

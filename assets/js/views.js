@@ -32,8 +32,8 @@ function loadViewContents(v, t) {
     setTimeout(function(){
       $('.app').imagesLoaded( { background: '*' }, function() {
         if (v === "menu") {
-          // append date
-          $(document).find( ".date" ).html( "<span> " + date + "</span>" );
+          updateDateTime();
+          setTimeout(fitChannelGrid, 150);
         }
 
         if (v === "settings-main") {
