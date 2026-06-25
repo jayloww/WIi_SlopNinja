@@ -109,3 +109,95 @@
   width: 0%;
   transition: width 0.25s linear;
 }
+
+/* ── end screen ── */
+#game-end-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+#game-end-screen.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.end-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 64px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  color: #ffffff;
+  font-family: 'Asap', sans-serif;
+  text-align: center;
+}
+
+.end-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+.end-score-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  opacity: 0.7;
+}
+
+.end-score-value {
+  font-size: clamp(64px, 10vw, 96px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.end-highscore {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.65;
+  margin-bottom: 24px;
+}
+
+.end-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.end-btn {
+  padding: 12px 32px;
+  font-family: 'Asap', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #333;
+  cursor: url(../images/cursor.png), auto;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.end-btn:hover {
+  transform: scale(1.06);
+}
+
+.end-btn-secondary {
+  background: transparent;
+  color: #ffffff;
+}

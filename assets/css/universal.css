@@ -37,3 +37,13 @@ body {
 .black.animate {
   opacity: 1;
 }
+
+body.in-game,
+body.in-game * {
+  cursor: none !important;
+}
+
+body.end-screen-open,
+body.end-screen-open * {
+  cursor: url(../images/cursor.png), auto !important;
+}

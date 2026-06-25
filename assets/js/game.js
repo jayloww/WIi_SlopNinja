@@ -3,9 +3,11 @@
 var gameTimerInterval  = null;
 var gameElapsedSeconds = 0;
 var gameScore          = 0;
-var gameMaxSeconds     = 180;
+var gameMaxSeconds     = 45;
 
 var ITEMS_POOL = [];
+var AI_POOL    = [];
+var REAL_POOL  = [];
 var gameCanvas = null;
 var gameCtx = null;
 var gameItems = [];
@@ -35,13 +37,17 @@ const realImages = [
 aiImages.forEach(src => {
   let img = new Image();
   img.src = "assets/images/AI/" + src;
-  ITEMS_POOL.push({ image: img, type: "SLOP" });
+  const entry = { image: img, type: "SLOP" };
+  ITEMS_POOL.push(entry);
+  AI_POOL.push(entry);
 });
 
 realImages.forEach(src => {
   let img = new Image();
   img.src = "assets/images/real/" + src;
-  ITEMS_POOL.push({ image: img, type: "REAL" });
+  const entry = { image: img, type: "REAL" };
+  ITEMS_POOL.push(entry);
+  REAL_POOL.push(entry);
 });
 
 function resizeCanvas() {
@@ -53,38 +59,46 @@ function resizeCanvas() {
 
 window.addEventListener("resize", resizeCanvas);
 
-function throwItem() {
-  if (!gameCanvas || ITEMS_POOL.length === 0) return;
-  const proto = ITEMS_POOL[Math.floor(Math.random() * ITEMS_POOL.length)];
-  
-  // Toss mostly from underside into the frame
-  const x = gameCanvas.width * (0.25 + Math.random() * 0.5);
+function spawnFromPool(pool, xOverride) {
+  if (!gameCanvas || pool.length === 0) return;
+  const proto = pool[Math.floor(Math.random() * pool.length)];
+
+  const x = xOverride !== undefined
+    ? xOverride
+    : gameCanvas.width * (0.25 + Math.random() * 0.5);
   const y = gameCanvas.height + 60;
-  
-  // Don't throw too much outside left/right, keep it in frame
-  const targetX = gameCanvas.width * (0.3 + Math.random() * 0.4);
+
+  const targetX    = gameCanvas.width * (0.3 + Math.random() * 0.4);
   const peakHeight = gameCanvas.height * (0.1 + Math.random() * 0.4);
-  
+
   const dy = peakHeight - y;
   const vy = -Math.sqrt(Math.abs(2 * GRAVITY * dy));
-  
-  const t = Math.abs(vy / GRAVITY);
+  const t  = Math.abs(vy / GRAVITY);
   const vx = (targetX - x) / t;
-  
-  // Guarantee at least a bit of rotation, randomizing the direction
+
   let rotSpeed = Math.random() * 0.008 + 0.003;
   if (Math.random() < 0.5) rotSpeed = -rotSpeed;
 
   gameItems.push({
     image: proto.image,
-    type: proto.type,
-    x: x,
-    y: y,
-    vx: vx,
-    vy: vy,
-    rotation: Math.random() * Math.PI * 2,
+    type:  proto.type,
+    x, y, vx, vy,
+    rotation:      Math.random() * Math.PI * 2,
     rotationSpeed: rotSpeed
   });
+}
+
+function throwItem() {
+  spawnFromPool(ITEMS_POOL);
+}
+
+function throwPair() {
+  if (!gameCanvas) return;
+  // AI image from the left third, real image from the right third
+  const leftX  = gameCanvas.width * (0.15 + Math.random() * 0.20);
+  const rightX = gameCanvas.width * (0.65 + Math.random() * 0.20);
+  spawnFromPool(AI_POOL,   leftX);
+  spawnFromPool(REAL_POOL, rightX);
 }
 
 /* ── item dimensions helper ── */
@@ -182,12 +196,27 @@ function gameLoop() {
   spawnTimer++;
   
   const progress = Math.min(gameElapsedSeconds / gameMaxSeconds, 1.0);
-  const currentSpawnRate = Math.floor(90 - (90 - 25) * progress);
-  
-  if (spawnTimer >= currentSpawnRate) {
-    spawnTimer = 0;
-    const burstCount = (progress > 0.4 && Math.random() < 0.4) ? 2 : 1;
-    for (let j = 0; j < burstCount; j++) setTimeout(throwItem, j * 250);
+
+  // Only spawn while the clock is still running
+  if (gameElapsedSeconds < gameMaxSeconds) {
+    // Two-phase spawn rate (frames between throws):
+    //   0–38s : slow intro → steady ramp, 160 → 55 frames
+    //  38–45s : finale, 55 → 32 frames  (what used to be "mid" is now the peak)
+    let currentSpawnRate;
+    // Single linear ramp: one every ~6s at the start, one every ~1.5s at the end
+    currentSpawnRate = Math.floor(360 - 270 * progress);   // 360 → 90 (linear)
+
+    spawnTimer++;
+    if (spawnTimer >= currentSpawnRate) {
+      spawnTimer = 0;
+      // Pair chance fades from 30% at the start to 0% at the last 10s (progress ~0.78)
+      const pairChance = Math.max(0, 0.30 * (1 - progress / 0.78));
+      if (Math.random() < pairChance) {
+        throwPair();
+      } else {
+        throwItem();
+      }
+    }
   }
   
   /* ── live items ── */
@@ -257,8 +286,9 @@ function gameLoop() {
 }
 
 function formatGameTime(totalSeconds) {
-  var minutes = Math.floor(totalSeconds / 60);
-  var seconds = totalSeconds % 60;
+  var remaining = Math.max(gameMaxSeconds - totalSeconds, 0);
+  var minutes = Math.floor(remaining / 60);
+  var seconds = remaining % 60;
   return minutes.toString().padStart(2, "0") + ":" + seconds.toString().padStart(2, "0");
 }
 function formatScore(v) {
@@ -286,7 +316,8 @@ function updateGameHud() {
   $("#game-timer").text(formatGameTime(gameElapsedSeconds));
   $("#game-score").text(formatScore(gameScore));
   $("#game-highscore").text(formatScore(getHighScore()));
-  $("#game-progress").css("width", Math.min((gameElapsedSeconds / gameMaxSeconds) * 100, 100) + "%");
+  var remaining = Math.max(1 - gameElapsedSeconds / gameMaxSeconds, 0);
+  $("#game-progress").css("width", (remaining * 100).toFixed(1) + "%");
 }
 
 /* ─── slash renderer ─────────────────────────────────────── */
@@ -513,13 +544,65 @@ function initGame() {
   gameTimerInterval = setInterval(function() {
     gameElapsedSeconds += 1;
     updateGameHud();
+    if (gameElapsedSeconds >= gameMaxSeconds) {
+      clearInterval(gameTimerInterval);
+      gameTimerInterval = null;
+      // Wait for all items to fall off screen, then show end screen
+      waitForClear();
+    }
   }, 1000);
 
   initGameSlash();
+}
+
+function waitForClear() {
+  // Poll every 200ms until all items and pieces are gone from the canvas
+  var poll = setInterval(function() {
+    var allGone = gameItems.length === 0 && slicedPieces.length === 0;
+    if (allGone) {
+      clearInterval(poll);
+      stopGameSlash();
+      if (gameAnimationFrame) {
+        cancelAnimationFrame(gameAnimationFrame);
+        gameAnimationFrame = null;
+      }
+      showEndScreen();
+    }
+  }, 200);
+}
+
+function showEndScreen() {
+  if (gameScore > getHighScore()) setHighScore(gameScore);
+
+  var el = document.getElementById("game-end-screen");
+  if (!el) return;
+
+  document.getElementById("end-score-value").textContent = formatScore(gameScore);
+  document.getElementById("end-highscore-value").textContent = formatScore(getHighScore());
+  el.classList.add("visible");
+
+  // Restore Wii cursor for the end screen
+  $("body").addClass("end-screen-open");
 }
 
 function startGame() {
   select();
   previousView = currentView || "menu";
   changeView("game", "fade");
+}
+
+function restartGame() {
+  select();
+  $("body").removeClass("end-screen-open");
+  var el = document.getElementById("game-end-screen");
+  if (el) el.classList.remove("visible");
+  initGame();
+}
+
+function endGoToMenu() {
+  back();
+  // Strip all game/channel state from body so the menu loads clean
+  $("body").removeClass("in-game end-screen-open channel-splash splash-switch");
+  stopGameTimer();
+  changeView("menu", "fade");
 }
