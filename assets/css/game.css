@@ -1,0 +1,86 @@
+.game-screen {
+  width: 100vw;
+  height: 100vh;
+  background-image: url(../images/4K_PinkCloud_BackgroundImage.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 36px 48px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.game-hud-left,
+.game-hud-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-hud-right {
+  align-items: flex-end;
+}
+
+.hud-label {
+  font-family: 'Asap', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.hud-score {
+  font-family: 'Asap', sans-serif;
+  font-size: clamp(48px, 8vw, 80px);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.hud-highscore {
+  font-family: 'Asap', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  margin-top: 10px;
+}
+
+.hud-timer-pill {
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  padding: 4px 22px;
+  color: #ffffff;
+  font-family: 'Asap', sans-serif;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hud-progress {
+  width: clamp(140px, 18vw, 220px);
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.18);
+  box-sizing: border-box;
+}
+
+.hud-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.25s linear;
+}

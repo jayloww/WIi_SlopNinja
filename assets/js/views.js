@@ -44,6 +44,16 @@ function loadViewContents(v, t) {
           }, 300);
         }
 
+        if (v === "game") {
+          var music = document.getElementById("bg-music");
+          music.pause();
+          initGame();
+        }
+
+        if (v !== "game") {
+          stopGameTimer();
+        }
+
         currentView = v;
 
         // transition out
