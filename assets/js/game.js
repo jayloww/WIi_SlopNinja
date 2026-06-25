@@ -1,7 +1,9 @@
-var gameTimerInterval = null;
+/* ─── timer / score ──────────────────────────────────────── */
+
+var gameTimerInterval  = null;
 var gameElapsedSeconds = 0;
-var gameScore = 0;
-var gameMaxSeconds = 180;
+var gameScore          = 0;
+var gameMaxSeconds     = 180;
 
 var ITEMS_POOL = [];
 var gameCanvas = null;
@@ -163,20 +165,16 @@ function formatGameTime(totalSeconds) {
   var seconds = totalSeconds % 60;
   return minutes.toString().padStart(2, "0") + ":" + seconds.toString().padStart(2, "0");
 }
-
-function formatScore(value) {
-  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function formatScore(v) {
+  return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
-
 function getHighScore() {
-  var stored = localStorage.getItem("wii-game-highscore");
-  return stored ? parseInt(stored, 10) : 8750;
+  var s = localStorage.getItem("wii-game-highscore");
+  return s ? parseInt(s, 10) : 8750;
 }
-
-function setHighScore(value) {
-  localStorage.setItem("wii-game-highscore", value);
+function setHighScore(v) {
+  localStorage.setItem("wii-game-highscore", v);
 }
-
 function stopGameTimer() {
   if (gameTimerInterval) {
     clearInterval(gameTimerInterval);
@@ -186,17 +184,176 @@ function stopGameTimer() {
     cancelAnimationFrame(gameAnimationFrame);
     gameAnimationFrame = null;
   }
+  stopGameSlash();
 }
-
 function updateGameHud() {
   $("#game-timer").text(formatGameTime(gameElapsedSeconds));
   $("#game-score").text(formatScore(gameScore));
   $("#game-highscore").text(formatScore(getHighScore()));
-
-  var progress = Math.min((gameElapsedSeconds / gameMaxSeconds) * 100, 100);
-  $("#game-progress").css("width", progress + "%");
+  $("#game-progress").css("width", Math.min((gameElapsedSeconds / gameMaxSeconds) * 100, 100) + "%");
 }
 
+/* ─── slash renderer ─────────────────────────────────────── */
+
+var slashCanvas  = null;
+var slashCtx     = null;
+var slashRAF     = null;
+var slashDrawing = false;
+var slashPath    = [];          // { x, y, time }  — timestamped points
+var slashMouse   = { x: 0, y: 0 };
+
+var TRAIL_MS = 190;             // how long (ms) each point lives
+
+/* ── draw the timestamped trail ── */
+function drawTrail() {
+  var path = slashPath;
+  if (path.length < 2) return;
+
+  var ctx = slashCtx;
+
+  for (var i = 1; i < path.length; i++) {
+    var t = i / path.length;                  // 0 = tail, 1 = tip
+    ctx.beginPath();
+    ctx.moveTo(path[i - 1].x, path[i - 1].y);
+    ctx.lineTo(path[i].x,     path[i].y);
+
+    ctx.lineWidth   = t * 9 + 1;             // tail=1px, tip=10px
+    ctx.lineCap     = "round";
+    ctx.lineJoin    = "round";
+    ctx.strokeStyle = "rgba(255,255,255," + (t * 0.85 + 0.15).toFixed(3) + ")";
+    ctx.shadowColor = "rgba(200,220,255,0.6)";
+    ctx.shadowBlur  = 10 * t;
+    ctx.stroke();
+  }
+}
+
+/* ── crosshair cursor ── */
+function drawCursorRing(x, y) {
+  var ctx = slashCtx;
+  var arm = 10;
+  var gap = 4;
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth   = 1.5;
+  ctx.lineCap     = "round";
+  ctx.shadowColor = "rgba(255,255,255,0.6)";
+  ctx.shadowBlur  = 6;
+
+  ctx.beginPath(); ctx.moveTo(x - arm - gap, y); ctx.lineTo(x - gap, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + gap, y);        ctx.lineTo(x + arm + gap, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - arm - gap);  ctx.lineTo(x, y - gap); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y + gap);         ctx.lineTo(x, y + arm + gap); ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ── resize ── */
+function resizeSlashCanvas() {
+  if (!slashCanvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  slashCanvas.width        = window.innerWidth  * dpr;
+  slashCanvas.height       = window.innerHeight * dpr;
+  slashCanvas.style.width  = window.innerWidth  + "px";
+  slashCanvas.style.height = window.innerHeight + "px";
+  slashCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+/* ── main render loop ── */
+function slashLoop() {
+  if (!slashCtx) return;
+
+  /* drop points older than TRAIL_MS */
+  var now = Date.now();
+  while (slashPath.length > 0 && now - slashPath[0].time > TRAIL_MS) {
+    slashPath.shift();
+  }
+
+  slashCtx.clearRect(0, 0, slashCanvas.width, slashCanvas.height);
+
+  if (slashPath.length > 1) {
+    drawTrail();
+  }
+
+  if (!slashDrawing && slashPath.length === 0) {
+    drawCursorRing(slashMouse.x, slashMouse.y);
+  }
+
+  slashRAF = requestAnimationFrame(slashLoop);
+}
+
+/* ── event helpers ── */
+function getSlashPos(e) {
+  var r   = slashCanvas.getBoundingClientRect();
+  var src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top, time: Date.now() };
+}
+
+function onSlashMouseDown(e) {
+  if (e.button !== 0) return;
+  slashDrawing = true;
+  slashPath    = [getSlashPos(e)];
+  e.preventDefault();
+}
+function onSlashMouseMove(e) {
+  var pos = getSlashPos(e);
+  slashMouse.x = pos.x;
+  slashMouse.y = pos.y;
+  if (slashDrawing) slashPath.push(pos);
+  e.preventDefault();
+}
+function onSlashMouseUp(e) {
+  if (e.button !== 0) return;
+  slashDrawing = false;
+}
+function onSlashMouseLeave() {
+  slashDrawing = false;
+}
+
+/* ── lifecycle ── */
+function initGameSlash() {
+  stopGameSlash();
+
+  slashCanvas = document.getElementById("slash-canvas");
+  if (!slashCanvas) return;
+  slashCtx    = slashCanvas.getContext("2d");
+  slashDrawing = false;
+  slashPath    = [];
+
+  resizeSlashCanvas();
+  $(window).on("resize.slash", resizeSlashCanvas);
+
+  slashCanvas.addEventListener("mousedown",  onSlashMouseDown,  { passive: false });
+  slashCanvas.addEventListener("mousemove",  onSlashMouseMove,  { passive: false });
+  slashCanvas.addEventListener("mouseup",    onSlashMouseUp);
+  slashCanvas.addEventListener("mouseleave", onSlashMouseLeave);
+
+  if (slashRAF) cancelAnimationFrame(slashRAF);
+  slashRAF = requestAnimationFrame(slashLoop);
+}
+
+function stopGameSlash() {
+  slashDrawing = false;
+  slashPath    = [];
+
+  if (slashRAF) { cancelAnimationFrame(slashRAF); slashRAF = null; }
+  $(window).off("resize.slash");
+
+  if (slashCanvas) {
+    slashCanvas.removeEventListener("mousedown",  onSlashMouseDown);
+    slashCanvas.removeEventListener("mousemove",  onSlashMouseMove);
+    slashCanvas.removeEventListener("mouseup",    onSlashMouseUp);
+    slashCanvas.removeEventListener("mouseleave", onSlashMouseLeave);
+  }
+
+  if (slashCtx && slashCanvas)
+    slashCtx.clearRect(0, 0, slashCanvas.width, slashCanvas.height);
+
+  slashCanvas = null;
+  slashCtx    = null;
+}
+
+/* ─── game init ──────────────────────────────────────────── */
 function initGame() {
   stopGameTimer();
   
@@ -210,13 +367,15 @@ function initGame() {
   }
 
   gameElapsedSeconds = 0;
-  gameScore = 0;
+  gameScore          = 0;
   updateGameHud();
 
   gameTimerInterval = setInterval(function() {
     gameElapsedSeconds += 1;
     updateGameHud();
   }, 1000);
+
+  initGameSlash();
 }
 
 function startGame() {
