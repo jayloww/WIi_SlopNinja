@@ -17,20 +17,19 @@ var spawnTimer = 0;
 const GRAVITY = 0.11;
 
 const aiImages = [
-  "NYC_generated.jpg", 
-  "abstract_art_generated.jpg", "architecture_generated.jpg", "banana-hound.png", 
-  "banana-usb.jpg", "blue-runner-shark.jpg", "cactus-elephant-clock.jpg", 
-  "capybara-call-center.png", "cat_loaf.jpg", "crocodile-wrestle.png", 
-  "espresso-goose.png", "frog-tire.png", "glass-dachshund.png", 
-  "greek-frog.png", "jogging_generated.jpg", "munich_generated.jpg", 
-  "pelican-open-for-work.png", "port_generated.jpg", "rainforest_generated.jpg", 
-  "shark-vase.png", "shrimp-benediction-20260617.png", "tree-figure.png", 
-  "washing-machine.png", "white-collar-fish.jpg"
+  "blue-runner-shark 2.png", "cactus-elephant-clock 1.png", "frog-tire 1.png",
+  "image 1.png", "image 21.png", "image 22.png", "image 23.png", "image 24.png",
+  "image 25.png", "image 27.png", "image 29.png", "image 30.png", "image 31.png",
+  "image 32.png", "image 33.png", "image 34.png", "image 35.png", "image 36.png",
+  "image 38.png", "image 39.png", "image 40.png", "image 41.png", "image 42.png",
+  "image 43.png", "image 44.png", "image 45.png", "image 5.png", "tree-figure 1.png"
 ];
 
 const realImages = [
-  "abstract.webp", "architecture.webp", "art.webp", "car.webp", "fish_boy.webp", 
-  "jogging.webp", "light.webp", "nature.webp", "vase.webp"
+  "image 10.png", "image 11.png", "image 12.png", "image 13.png", "image 14.png",
+  "image 15.png", "image 16.png", "image 17.png", "image 18.png", "image 19.png",
+  "image 20.png", "image 46.png", "image 47.png", "image 48.png", "image 49.png",
+  "image 50.png", "image 6.png", "image 7.png", "image 8.png", "image 9.png"
 ];
 
 // Preload images right away
@@ -50,6 +49,28 @@ realImages.forEach(src => {
   REAL_POOL.push(entry);
 });
 
+/* ── Shuffled deck: draw every item once before repeating, never same order twice ── */
+function ShuffledDeck(source) {
+  this.source = source;
+  this.deck   = [];
+}
+ShuffledDeck.prototype._refill = function() {
+  this.deck = this.source.slice();
+  // Fisher-Yates shuffle
+  for (let i = this.deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = this.deck[i]; this.deck[i] = this.deck[j]; this.deck[j] = tmp;
+  }
+};
+ShuffledDeck.prototype.draw = function() {
+  if (this.deck.length === 0) this._refill();
+  return this.deck.pop();
+};
+
+var deckAll  = null;
+var deckAI   = null;
+var deckReal = null;
+
 function resizeCanvas() {
   if (gameCanvas) {
     gameCanvas.width = window.innerWidth;
@@ -59,9 +80,9 @@ function resizeCanvas() {
 
 window.addEventListener("resize", resizeCanvas);
 
-function spawnFromPool(pool, xOverride) {
-  if (!gameCanvas || pool.length === 0) return;
-  const proto = pool[Math.floor(Math.random() * pool.length)];
+function spawnFromPool(deck, xOverride) {
+  if (!gameCanvas || !deck) return;
+  const proto = deck.draw();
 
   const x = xOverride !== undefined
     ? xOverride
@@ -89,22 +110,21 @@ function spawnFromPool(pool, xOverride) {
 }
 
 function throwItem() {
-  spawnFromPool(ITEMS_POOL);
+  spawnFromPool(deckAll);
 }
 
 function throwPair() {
   if (!gameCanvas) return;
-  // AI image from the left third, real image from the right third
   const leftX  = gameCanvas.width * (0.15 + Math.random() * 0.20);
   const rightX = gameCanvas.width * (0.65 + Math.random() * 0.20);
-  spawnFromPool(AI_POOL,   leftX);
-  spawnFromPool(REAL_POOL, rightX);
+  spawnFromPool(deckAI,   leftX);
+  spawnFromPool(deckReal, rightX);
 }
 
 /* ── item dimensions helper ── */
 function getItemDims(img) {
   if (img.complete && img.naturalWidth > 0) {
-    const maxDim = 210;
+    const maxDim = Math.round(window.innerWidth * 0.13);
     const scale  = maxDim / Math.max(img.naturalWidth, img.naturalHeight);
     return { w: img.naturalWidth * scale, h: img.naturalHeight * scale };
   }
@@ -128,20 +148,33 @@ function drawCard(ctx, img, halfW, halfH) {
   ctx.restore();
 }
 
-/* ── collision: line segment vs circle ── */
-function lineHitsCircle(x1, y1, x2, y2, cx, cy, r) {
-  const dx = x2 - x1, dy = y2 - y1;
-  const fx = x1 - cx, fy = y1 - cy;
-  const a  = dx*dx + dy*dy;
-  if (a === 0) return false;
-  const b  = 2*(fx*dx + fy*dy);
-  const c  = fx*fx + fy*fy - r*r;
-  const d  = b*b - 4*a*c;
-  if (d < 0) return false;
-  const sq = Math.sqrt(d);
-  const t1 = (-b - sq) / (2*a);
-  const t2 = (-b + sq) / (2*a);
-  return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1);
+/* ── collision: line segment vs rotated rectangle ── */
+function segSeg(ax, ay, bx, by, cx, cy, dx, dy) {
+  const d = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+  if (d === 0) return false;
+  const t = ((cx-ax)*(dy-cy) - (cy-ay)*(dx-cx)) / d;
+  const u = ((cx-ax)*(by-ay) - (cy-ay)*(bx-ax)) / d;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+function lineHitsRotatedRect(x1, y1, x2, y2, cx, cy, rotation, halfW, halfH) {
+  // Transform slash endpoints into item's local (unrotated) space
+  const cos = Math.cos(-rotation), sin = Math.sin(-rotation);
+  const dx1 = x1-cx, dy1 = y1-cy;
+  const dx2 = x2-cx, dy2 = y2-cy;
+  const lx1 =  cos*dx1 - sin*dy1,  ly1 = sin*dx1 + cos*dy1;
+  const lx2 =  cos*dx2 - sin*dy2,  ly2 = sin*dx2 + cos*dy2;
+
+  // Either endpoint inside the rect counts
+  if (lx1 >= -halfW && lx1 <= halfW && ly1 >= -halfH && ly1 <= halfH) return true;
+  if (lx2 >= -halfW && lx2 <= halfW && ly2 >= -halfH && ly2 <= halfH) return true;
+
+  // Or the segment crosses any of the 4 edges
+  const W = halfW, H = halfH;
+  return segSeg(lx1, ly1, lx2, ly2, -W, -H,  W, -H) ||  // top
+         segSeg(lx1, ly1, lx2, ly2,  W, -H,  W,  H) ||  // right
+         segSeg(lx1, ly1, lx2, ly2,  W,  H, -W,  H) ||  // bottom
+         segSeg(lx1, ly1, lx2, ly2, -W,  H, -W, -H);    // left
 }
 
 /* ── slice an item into two falling halves ── */
@@ -179,10 +212,9 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
 /* ── check slash segment against all live items ── */
 function checkSliceCollisions(x1, y1, x2, y2) {
   for (let i = gameItems.length - 1; i >= 0; i--) {
-    const item  = gameItems[i];
-    const dims  = getItemDims(item.image);
-    const r     = Math.sqrt(dims.w * dims.w + dims.h * dims.h) / 2 * 0.72;
-    if (lineHitsCircle(x1, y1, x2, y2, item.x, item.y, r)) {
+    const item = gameItems[i];
+    const dims = getItemDims(item.image);
+    if (lineHitsRotatedRect(x1, y1, x2, y2, item.x, item.y, item.rotation, dims.w / 2, dims.h / 2)) {
       sliceItem(item, i, x1, y1, x2, y2);
     }
   }
@@ -534,6 +566,9 @@ function initGame() {
     gameItems = [];
     slicedPieces = [];
     spawnTimer = 0;
+    deckAll  = new ShuffledDeck(ITEMS_POOL);
+    deckAI   = new ShuffledDeck(AI_POOL);
+    deckReal = new ShuffledDeck(REAL_POOL);
     gameLoop();
   }
 
