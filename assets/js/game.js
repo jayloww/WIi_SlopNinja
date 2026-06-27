@@ -14,7 +14,7 @@ var gameItems = [];
 var slicedPieces = [];
 var gameAnimationFrame = null;
 var spawnTimer = 0;
-const GRAVITY = 0.11;
+const GRAVITY = 0.055;
 
 const aiImages = [
   "blue-runner-shark 2.png", "cactus-elephant-clock 1.png", "frog-tire 1.png",
@@ -236,7 +236,7 @@ function gameLoop() {
     //  38–45s : finale, 55 → 32 frames  (what used to be "mid" is now the peak)
     let currentSpawnRate;
     // Single linear ramp: one every ~6s at the start, one every ~1.5s at the end
-    currentSpawnRate = Math.floor(360 - 270 * progress);   // 360 → 90 (linear)
+    currentSpawnRate = Math.floor(600 - 420 * progress);   // 600 → 180 (linear)
 
     spawnTimer++;
     if (spawnTimer >= currentSpawnRate) {
