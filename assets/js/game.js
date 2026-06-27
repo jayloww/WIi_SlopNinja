@@ -218,6 +218,15 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
     const pointsEarned = 100 + (currentCombo > 1 ? (currentCombo - 1) * 50 : 0);
     gameScore += pointsEarned;
     
+    // Play sword slash sound
+    var slashAudio = document.getElementById("slash-sound");
+    if (slashAudio) {
+      slashAudio.currentTime = 0;
+      slashAudio.volume = 0.15;
+      slashAudio.playbackRate = 0.8;
+      slashAudio.play().catch(function(e){});
+    }
+
     // Update and animate combo sticker
     if (currentCombo > 1) {
       const $sticker = $("#combo-sticker");
@@ -241,8 +250,39 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
     // Slicing a real image breaks the combo immediately
     currentCombo = 0;
     $("#combo-sticker").removeClass("pop-in");
+    playErrorSound();
   }
   updateGameHud();
+}
+
+var audioCtx = null;
+function playErrorSound() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    var oscillator = audioCtx.createOscillator();
+    var gainNode = audioCtx.createGain();
+    
+    // A harsh, low-pitched sawtooth wave for an error buzz
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(120, audioCtx.currentTime); 
+    oscillator.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {
+    console.log("Web Audio API not supported or failed", e);
+  }
 }
 
 /* ── check slash segment against all live items ── */
@@ -250,7 +290,10 @@ function checkSliceCollisions(x1, y1, x2, y2) {
   for (let i = gameItems.length - 1; i >= 0; i--) {
     const item = gameItems[i];
     const dims = getItemDims(item.image);
-    if (lineHitsRotatedRect(x1, y1, x2, y2, item.x, item.y, item.rotation, dims.w / 2, dims.h / 2)) {
+    // Shrink the collision box to 55% of the visual size so the player has to cut deeper into the image
+    const hitHalfW = (dims.w / 2) * 0.55;
+    const hitHalfH = (dims.h / 2) * 0.55;
+    if (lineHitsRotatedRect(x1, y1, x2, y2, item.x, item.y, item.rotation, hitHalfW, hitHalfH)) {
       sliceItem(item, i, x1, y1, x2, y2);
     }
   }
