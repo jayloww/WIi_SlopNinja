@@ -80,6 +80,76 @@
   margin-top: 10px;
 }
 
+/* ── Combo Sticker ── */
+.combo-sticker {
+  position: absolute;
+  top: 120px;
+  left: 210px;
+  background: #8b5cf6;
+  border: 4px solid #fdf4ff;
+  border-radius: 24px;
+  padding: 8px 24px 12px;
+  box-shadow: 
+    0 8px 0 #f472b6,
+    0 12px 20px rgba(0,0,0,0.2),
+    inset 0 -4px 0 rgba(0,0,0,0.1);
+  transform: rotate(-8deg) scale(0);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.combo-sticker.pop-in {
+  opacity: 1;
+  transform: rotate(-8deg) scale(1);
+  animation: stickerSlap 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes stickerSlap {
+  0% { transform: rotate(-25deg) scale(1.5); opacity: 0; }
+  100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+}
+
+.combo-text {
+  font-family: 'Asap', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 3px 0 #6d28d9;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.combo-multiplier {
+  font-family: 'Asap', sans-serif;
+  font-size: 54px;
+  font-weight: 900;
+  color: #f472b6;
+  text-shadow: 
+    -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff,
+    0 4px 0 #fff, 0 6px 0 #db2777;
+  line-height: 0.8;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.combo-sparkle {
+  position: absolute;
+  color: #fde047;
+  font-size: 24px;
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
+}
+
+.combo-sparkle-1 { top: -12px; left: 20px; font-size: 20px; animation: twinkle 1.5s infinite alternate; }
+.combo-sparkle-2 { bottom: 10px; right: 10px; font-size: 28px; animation: twinkle 1.2s infinite alternate-reverse; }
+.combo-sparkle-3 { top: 30px; right: -15px; font-size: 16px; color: #ffffff; animation: twinkle 1.8s infinite alternate; }
+
+@keyframes twinkle {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+
 .hud-timer-pill {
   border: 2px solid #ffffff;
   border-radius: 999px;
@@ -172,7 +242,47 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   opacity: 0.65;
+  margin-bottom: 20px;
+}
+
+.end-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
   margin-bottom: 24px;
+  padding: 16px 28px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.end-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.end-stat-num {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.end-stat-ai .end-stat-num   { color: #ff6b6b; }
+.end-stat-real .end-stat-num { color: #6bff9e; }
+
+.end-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+.end-stat-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255,255,255,0.2);
 }
 
 .end-buttons {

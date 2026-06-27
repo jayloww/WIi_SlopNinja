@@ -14,7 +14,10 @@ var gameItems = [];
 var slicedPieces = [];
 var gameAnimationFrame = null;
 var spawnTimer = 0;
-const GRAVITY = 0.055;
+var slicedAI   = 0;
+var slicedReal = 0;
+var currentCombo = 0;
+const GRAVITY = 0.075;
 
 const aiImages = [
   "blue-runner-shark 2.png", "cactus-elephant-clock 1.png", "frog-tire 1.png",
@@ -146,6 +149,7 @@ function drawCard(ctx, img, halfW, halfH) {
   ctx.clip();
   ctx.drawImage(img, -halfW, -halfH, halfW * 2, halfH * 2);
   ctx.restore();
+
 }
 
 /* ── collision: line segment vs rotated rectangle ── */
@@ -205,7 +209,39 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
   });
 
   gameItems.splice(idx, 1);
-  gameScore += 100;
+  if (item.type === "SLOP") {
+    slicedAI++;
+    currentCombo++;
+    
+    // Calculate score with combo multiplier
+    // Base 100, plus 50 for each combo level above 1
+    const pointsEarned = 100 + (currentCombo > 1 ? (currentCombo - 1) * 50 : 0);
+    gameScore += pointsEarned;
+    
+    // Update and animate combo sticker
+    if (currentCombo > 1) {
+      const $sticker = $("#combo-sticker");
+      $("#combo-count").text(currentCombo);
+      
+      // Remove and re-add class to trigger CSS animation restart
+      $sticker.removeClass("pop-in");
+      void $sticker[0].offsetWidth; // trigger reflow
+      $sticker.addClass("pop-in");
+      
+      // Play combo sound with escalating pitch
+      var comboAudio = document.getElementById("combo-sound");
+      if (comboAudio) {
+        comboAudio.currentTime = 0;
+        comboAudio.playbackRate = Math.min(1 + (currentCombo * 0.05), 2.0);
+        comboAudio.play().catch(function(e){});
+      }
+    }
+  } else {
+    slicedReal++;
+    // Slicing a real image breaks the combo immediately
+    currentCombo = 0;
+    $("#combo-sticker").removeClass("pop-in");
+  }
   updateGameHud();
 }
 
@@ -236,7 +272,7 @@ function gameLoop() {
     //  38–45s : finale, 55 → 32 frames  (what used to be "mid" is now the peak)
     let currentSpawnRate;
     // Single linear ramp: one every ~6s at the start, one every ~1.5s at the end
-    currentSpawnRate = Math.floor(600 - 420 * progress);   // 600 → 180 (linear)
+    currentSpawnRate = Math.floor(450 - 330 * progress);   // 450 → 120 (linear)
 
     spawnTimer++;
     if (spawnTimer >= currentSpawnRate) {
@@ -342,6 +378,8 @@ function stopGameTimer() {
     cancelAnimationFrame(gameAnimationFrame);
     gameAnimationFrame = null;
   }
+  var gameMusic = document.getElementById("game-music");
+  if (gameMusic) gameMusic.pause();
   stopGameSlash();
 }
 function updateGameHud() {
@@ -574,11 +612,30 @@ function initGame() {
 
   gameElapsedSeconds = 0;
   gameScore          = 0;
+  slicedAI           = 0;
+  slicedReal         = 0;
+  currentCombo       = 0;
+  $("#combo-sticker").removeClass("pop-in");
   updateGameHud();
+
+  var gameMusic = document.getElementById("game-music");
+  if (gameMusic) {
+    gameMusic.currentTime = 0;
+    gameMusic.volume = 0.3;
+    gameMusic.playbackRate = 1.0;
+    gameMusic.play().catch(function(e){});
+  }
 
   gameTimerInterval = setInterval(function() {
     gameElapsedSeconds += 1;
     updateGameHud();
+    
+    if (gameMusic) {
+      // Escalate music speed slightly as time runs out
+      var progress = gameElapsedSeconds / gameMaxSeconds;
+      gameMusic.playbackRate = 1.0 + (progress * 0.35); 
+    }
+
     if (gameElapsedSeconds >= gameMaxSeconds) {
       clearInterval(gameTimerInterval);
       gameTimerInterval = null;
@@ -601,6 +658,8 @@ function waitForClear() {
         cancelAnimationFrame(gameAnimationFrame);
         gameAnimationFrame = null;
       }
+      var gameMusic = document.getElementById("game-music");
+      if (gameMusic) gameMusic.pause();
       showEndScreen();
     }
   }, 200);
@@ -614,6 +673,8 @@ function showEndScreen() {
 
   document.getElementById("end-score-value").textContent = formatScore(gameScore);
   document.getElementById("end-highscore-value").textContent = formatScore(getHighScore());
+  document.getElementById("end-stat-ai").textContent   = slicedAI;
+  document.getElementById("end-stat-real").textContent = slicedReal;
   el.classList.add("visible");
 
   // Restore Wii cursor for the end screen

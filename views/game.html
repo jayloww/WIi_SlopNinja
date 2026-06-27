@@ -6,6 +6,13 @@
       <div class="hud-label">SCORE</div>
       <div class="hud-score" id="game-score">0</div>
       <div class="hud-highscore">HIGHSCORE <span id="game-highscore">0</span></div>
+      <div id="combo-sticker" class="combo-sticker">
+        <div class="combo-text">COMBO!</div>
+        <div class="combo-multiplier">x<span id="combo-count">0</span></div>
+        <div class="combo-sparkle combo-sparkle-1">✦</div>
+        <div class="combo-sparkle combo-sparkle-2">✦</div>
+        <div class="combo-sparkle combo-sparkle-3">✦</div>
+      </div>
     </div>
 
     <div class="game-hud-right">
@@ -23,6 +30,17 @@
       <div class="end-score-label">SCORE</div>
       <div class="end-score-value" id="end-score-value">0</div>
       <div class="end-highscore">HIGHSCORE &nbsp;<span id="end-highscore-value">0</span></div>
+      <div class="end-stats">
+        <div class="end-stat end-stat-ai">
+          <span class="end-stat-num" id="end-stat-ai">0</span>
+          <span class="end-stat-label">AI DESTROYED</span>
+        </div>
+        <div class="end-stat-divider"></div>
+        <div class="end-stat end-stat-real">
+          <span class="end-stat-num" id="end-stat-real">0</span>
+          <span class="end-stat-label">REAL SLICED</span>
+        </div>
+      </div>
       <div class="end-buttons">
         <button class="end-btn" onclick="restartGame()">Play Again</button>
         <button class="end-btn end-btn-secondary" onclick="endGoToMenu()">Wii Menu</button>
