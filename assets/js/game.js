@@ -180,11 +180,11 @@ function throwPair() {
 /* ── item dimensions helper ── */
 function getItemDims(img) {
   if (img.complete && img.naturalWidth > 0) {
-    const maxDim = Math.round(window.innerWidth * 0.13);
+    const maxDim = Math.round(window.innerWidth * 0.17);
     const scale = maxDim / Math.max(img.naturalWidth, img.naturalHeight);
     return { w: img.naturalWidth * scale, h: img.naturalHeight * scale };
   }
-  return { w: 160, h: 160 };
+  return { w: 200, h: 200 };
 }
 
 /* ── draw one image card (used for both live items and halves) ── */
