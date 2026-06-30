@@ -20,6 +20,8 @@ var slicedReal = 0;
 var currentCombo = 0;
 const GRAVITY = 0.075;
 const FRAME_MS = 1000 / 60;
+const PHYSICS_SPEED_MULTIPLIER = 2;
+const SPAWN_SPEED_MULTIPLIER = 4;
 
 const aiImages = [
   "blue-runner-shark 2.png", "cactus-elephant-clock 1.png", "frog-tire 1.png",
@@ -307,7 +309,7 @@ function gameLoop(now) {
   if (lastGameFrameTime === null) lastGameFrameTime = now;
   var deltaMs = Math.min(now - lastGameFrameTime, 50);
   lastGameFrameTime = now;
-  var dt = deltaMs / FRAME_MS;
+  var dt = (deltaMs / FRAME_MS) * PHYSICS_SPEED_MULTIPLIER;
 
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
@@ -326,7 +328,7 @@ function gameLoop(now) {
     currentSpawnRateFrames = Math.floor(450 - 330 * progress);   // 450 → 120 frames
     const currentSpawnRateMs = currentSpawnRateFrames * FRAME_MS;
 
-    spawnTimer += deltaMs;
+    spawnTimer += deltaMs * SPAWN_SPEED_MULTIPLIER;
     if (spawnTimer >= currentSpawnRateMs) {
       spawnTimer -= currentSpawnRateMs;
       // Pair chance fades from 30% at the start to 0% at the last 10s (progress ~0.78)
