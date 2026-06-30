@@ -26,24 +26,39 @@
 
   <div id="game-end-screen">
     <div class="end-card">
-      <div class="end-title">TIME'S UP</div>
-      <div class="end-score-label">SCORE</div>
-      <div class="end-score-value" id="end-score-value">0</div>
-      <div class="end-highscore">HIGHSCORE &nbsp;<span id="end-highscore-value">0</span></div>
-      <div class="end-stats">
-        <div class="end-stat end-stat-ai">
-          <span class="end-stat-num" id="end-stat-ai">0</span>
-          <span class="end-stat-label">AI DESTROYED</span>
+      <div class="end-main-content">
+        <div class="end-title">TIME'S UP</div>
+        <div class="end-score-label">SCORE</div>
+        <div class="end-score-value" id="end-score-value">0</div>
+        <div id="new-highscore-banner" class="new-highscore-banner">NEW HIGHSCORE!</div>
+        <div class="end-highscore">HIGHSCORE &nbsp;<span id="end-highscore-value">0</span></div>
+        <div class="end-stats">
+          <div class="end-stat end-stat-ai">
+            <span class="end-stat-num" id="end-stat-ai">0</span>
+            <span class="end-stat-label">AI DESTROYED</span>
+          </div>
+          <div class="end-stat-divider"></div>
+          <div class="end-stat end-stat-real">
+            <span class="end-stat-num" id="end-stat-real">0</span>
+            <span class="end-stat-label">REAL SLICED</span>
+          </div>
+          <div class="end-stat-divider"></div>
+          <div class="end-stat end-stat-missed">
+            <span class="end-stat-num" id="end-stat-missed">0</span>
+            <span class="end-stat-label">AI MISSED</span>
+          </div>
         </div>
-        <div class="end-stat-divider"></div>
-        <div class="end-stat end-stat-real">
-          <span class="end-stat-num" id="end-stat-real">0</span>
-          <span class="end-stat-label">REAL SLICED</span>
+        <div class="end-buttons">
+          <button class="end-btn" onclick="restartGame()">Play Again</button>
+          <button class="end-btn end-btn-secondary" onclick="endGoToMenu()">Wii Menu</button>
         </div>
       </div>
-      <div class="end-buttons">
-        <button class="end-btn" onclick="restartGame()">Play Again</button>
-        <button class="end-btn end-btn-secondary" onclick="endGoToMenu()">Wii Menu</button>
+      <div class="end-divider"></div>
+      <div class="end-leaderboard">
+        <div class="leaderboard-title">LEADERBOARD</div>
+        <div class="leaderboard-entries" id="leaderboard-entries">
+          <!-- Top 5 entries populated by JS -->
+        </div>
       </div>
     </div>
   </div>
