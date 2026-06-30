@@ -1,16 +1,29 @@
 # Wii.JS
-A work-in-progress Wii Menu for the browser. 
 
-# Planned Improvements
-* Better splash screens with video functionality
-* Settings page that allows for channels to be linked to web pages, saved using LocalStorage
-* Music/SFX settings
-* Themes
+A browser-based recreation of the Wii Menu, built as a Creative Coding project. Navigate the familiar channel grid, then launch **SLOP Slice** — a fruit-ninja-style game where you slice AI-generated images for points while avoiding real photos. You have three lives; difficulty ramps over time and the run ends when you run out.
 
-# Known Issues
-* Music doesn't start automatically in Chrome because of autoplaying restrictions. Only starts after clicking and exiting a channel.
-* Responsiveness and scaling isn't perfect, causing layout issues on some viewport sizes. This will be improved over time.
-* Does not work in low-res viewports or smartphones. I'm targeting desktops, so fixing this is low priority for the moment.
-* CSS clip doesn't have the greatest browser compatiblity, causing the corners of channel images to bleed outside of the outlines. Observed in Microsoft Edge. I'm exploring alternative options. 
-* Oddities with the cursor's shadow transparency have been observed on Chrome OS. 
-Github issues are welcome for anything not listed here.
+## How to run
+
+This is a static site — open it through a local web server (not `file://`).
+
+**Option 1 — Python (built in on macOS):**
+
+```bash
+cd Wii.JS
+python3 -m http.server 8000
+```
+
+Then open [http://localhost:8000](http://localhost:8000).
+
+**Option 2 — Node:**
+
+```bash
+npx serve
+```
+
+Use the URL printed in the terminal (usually [http://localhost:3000](http://localhost:3000)).
+
+## Controls
+
+- **Menu:** Wii-style cursor — click channels to open them, use the splash screen to start the game.
+- **Game:** Move the crosshair and click to slash. Slice AI images for score and combos; slicing a real image or missing AI costs a life.

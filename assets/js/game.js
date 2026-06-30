@@ -3,7 +3,10 @@
 var gameTimerInterval = null;
 var gameElapsedSeconds = 0;
 var gameScore = 0;
-var gameMaxSeconds = 45;
+var gameOver = false;
+var playerLives = 3;
+const MAX_LIVES = 3;
+const DIFFICULTY_RAMP_SECONDS = 60;
 
 var ITEMS_POOL = [];
 var AI_POOL = [];
@@ -15,7 +18,6 @@ var slicedPieces = [];
 var gameAnimationFrame = null;
 var spawnTimer = 0;
 var lastGameFrameTime = null;
-var waitForClearPoll = null;
 var slicedAI = 0;
 var slicedReal = 0;
 var missedAI = 0;
@@ -279,11 +281,75 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
     }
   } else {
     slicedReal++;
-    // Slicing a real image breaks the combo immediately
     resetCombo();
     playRealSliceErrorSound();
+    loseLife();
   }
   updateGameHud();
+}
+
+function getDifficultyProgress() {
+  return Math.min(gameElapsedSeconds / DIFFICULTY_RAMP_SECONDS, 1.0);
+}
+
+function getSpawnRateFrames() {
+  const progress = getDifficultyProgress();
+  let frames = Math.floor(420 - 315 * progress);   // 420 → 105 over 60s
+
+  // Keep ramping after 60s so survival becomes nearly impossible
+  if (gameElapsedSeconds > DIFFICULTY_RAMP_SECONDS) {
+    const overtime = gameElapsedSeconds - DIFFICULTY_RAMP_SECONDS;
+    frames = Math.max(35, 105 - overtime * 2.5);
+  }
+
+  return frames;
+}
+
+function loseLife() {
+  if (gameOver) return;
+  var lostIndex = playerLives - 1;
+  playerLives = Math.max(playerLives - 1, 0);
+
+  if (lostIndex >= 0) {
+    var $heart = $("#game-lives .life-icon").eq(lostIndex);
+    $heart.removeClass("filled losing").addClass("empty losing");
+    void $heart[0].offsetWidth;
+    setTimeout(function () {
+      $heart.removeClass("losing");
+    }, 600);
+  }
+
+  updateGameHud();
+  if (playerLives <= 0) {
+    triggerGameOver();
+  }
+}
+
+function triggerGameOver() {
+  if (gameOver) return;
+  gameOver = true;
+  finishGame();
+}
+
+function finishGame() {
+  if (gameTimerInterval) {
+    clearInterval(gameTimerInterval);
+    gameTimerInterval = null;
+  }
+
+  gameItems = [];
+  slicedPieces = [];
+  stopGameSlash();
+
+  if (gameAnimationFrame) {
+    cancelAnimationFrame(gameAnimationFrame);
+    gameAnimationFrame = null;
+  }
+
+  var gameMusic = document.getElementById("game-music");
+  if (gameMusic) gameMusic.pause();
+
+  showEndScreen();
 }
 
 function resetCombo() {
@@ -366,26 +432,23 @@ function gameLoop(now) {
 
   gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-  const progress = Math.min(gameElapsedSeconds / gameMaxSeconds, 1.0);
+  const progress = getDifficultyProgress();
 
-  // Game music playback rate is kept at 1.0
+  // Game music speeds up slightly as difficulty rises
   var gameMusic = document.getElementById("game-music");
   if (gameMusic) {
-    gameMusic.playbackRate = 1.0;
+    gameMusic.playbackRate = 1.0 + progress * 0.35;
   }
 
-  // Only spawn while the clock is still running
-  if (gameElapsedSeconds < gameMaxSeconds) {
-    // Spawn cadence is derived from the old frame-based tuning at 60 FPS.
-    let currentSpawnRateFrames;
-    currentSpawnRateFrames = Math.floor(420 - 315 * progress);   // 420 → 105 frames
+  if (!gameOver) {
+    const currentSpawnRateFrames = getSpawnRateFrames();
     const currentSpawnRateMs = currentSpawnRateFrames * FRAME_MS;
 
     spawnTimer += deltaMs * SPAWN_SPEED_MULTIPLIER;
     if (spawnTimer >= currentSpawnRateMs) {
       spawnTimer -= currentSpawnRateMs;
-      // Pair chance fades from 30% at the start to 0% at the last 10s (progress ~0.78)
-      const pairChance = Math.max(0, 0.30 * (1 - progress / 0.78));
+      // Pair chance fades out by ~45s, stays off during peak difficulty
+      const pairChance = Math.max(0, 0.30 * (1 - gameElapsedSeconds / 45));
       if (Math.random() < pairChance) {
         throwPair();
       } else {
@@ -405,10 +468,9 @@ function gameLoop(now) {
     if (item.y > gameCanvas.height + 200 && item.vy > 0) {
       if (item.type === "SLOP") {
         missedAI++;
-        if (currentCombo > 0) {
-          resetCombo();
-          playMissSound();
-        }
+        resetCombo();
+        playMissSound();
+        loseLife();
       }
       gameItems.splice(i, 1);
       continue;
@@ -468,9 +530,8 @@ function gameLoop(now) {
 }
 
 function formatGameTime(totalSeconds) {
-  var remaining = Math.max(gameMaxSeconds - totalSeconds, 0);
-  var minutes = Math.floor(remaining / 60);
-  var seconds = remaining % 60;
+  var minutes = Math.floor(totalSeconds / 60);
+  var seconds = totalSeconds % 60;
   return minutes.toString().padStart(2, "0") + ":" + seconds.toString().padStart(2, "0");
 }
 function formatScore(v) {
@@ -497,10 +558,6 @@ function stopGameTimer() {
     clearInterval(gameTimerInterval);
     gameTimerInterval = null;
   }
-  if (waitForClearPoll) {
-    clearInterval(waitForClearPoll);
-    waitForClearPoll = null;
-  }
   if (gameAnimationFrame) {
     cancelAnimationFrame(gameAnimationFrame);
     gameAnimationFrame = null;
@@ -515,8 +572,18 @@ function updateGameHud() {
   $("#game-timer").text(formatGameTime(gameElapsedSeconds));
   $("#game-score").text(formatScore(gameScore));
   $("#game-highscore").text(formatScore(getHighScore()));
-  var remaining = Math.max(1 - gameElapsedSeconds / gameMaxSeconds, 0);
-  $("#game-progress").css("width", (remaining * 100).toFixed(1) + "%");
+  updateLivesHud();
+}
+
+function updateLivesHud() {
+  var $hearts = $("#game-lives .life-icon");
+  if (!$hearts.length) return;
+
+  $hearts.each(function (i) {
+    var $heart = $(this);
+    if ($heart.hasClass("losing")) return;
+    $heart.removeClass("filled empty").addClass(i < playerLives ? "filled" : "empty");
+  });
 }
 
 /* ─── slash renderer ─────────────────────────────────────── */
@@ -744,6 +811,8 @@ function initGame() {
 
   gameElapsedSeconds = 0;
   gameScore = 0;
+  gameOver = false;
+  playerLives = MAX_LIVES;
   slicedAI = 0;
   slicedReal = 0;
   spawnCountAI = 0;
@@ -761,43 +830,14 @@ function initGame() {
   }
 
   gameTimerInterval = setInterval(function () {
-    gameElapsedSeconds += 1;
-    updateGameHud();
-
-    if (gameElapsedSeconds >= gameMaxSeconds) {
-      clearInterval(gameTimerInterval);
-      gameTimerInterval = null;
-      // Wait for all items to fall off screen, then show end screen
-      waitForClear();
+    if (!gameOver) {
+      gameElapsedSeconds += 1;
+      updateGameHud();
     }
   }, 1000);
 
   initGameSlash();
   document.addEventListener("keydown", onGameDebugKeyDown);
-}
-
-function waitForClear() {
-  if (waitForClearPoll) {
-    clearInterval(waitForClearPoll);
-    waitForClearPoll = null;
-  }
-
-  // Poll every 200ms until all items and pieces are gone from the canvas
-  waitForClearPoll = setInterval(function () {
-    var allGone = gameItems.length === 0 && slicedPieces.length === 0;
-    if (allGone) {
-      clearInterval(waitForClearPoll);
-      waitForClearPoll = null;
-      stopGameSlash();
-      if (gameAnimationFrame) {
-        cancelAnimationFrame(gameAnimationFrame);
-        gameAnimationFrame = null;
-      }
-      var gameMusic = document.getElementById("game-music");
-      if (gameMusic) gameMusic.pause();
-      showEndScreen();
-    }
-  }, 200);
 }
 
 function onGameDebugKeyDown(e) {
@@ -812,31 +852,12 @@ function onGameDebugKeyDown(e) {
 }
 
 function endGameEarly() {
-  if (gameTimerInterval) {
-    clearInterval(gameTimerInterval);
-    gameTimerInterval = null;
-  }
-  if (waitForClearPoll) {
-    clearInterval(waitForClearPoll);
-    waitForClearPoll = null;
-  }
+  if (gameOver) return;
 
-  gameElapsedSeconds = gameMaxSeconds;
+  gameOver = true;
+  playerLives = 0;
   updateGameHud();
-
-  gameItems = [];
-  slicedPieces = [];
-  stopGameSlash();
-
-  if (gameAnimationFrame) {
-    cancelAnimationFrame(gameAnimationFrame);
-    gameAnimationFrame = null;
-  }
-
-  var gameMusic = document.getElementById("game-music");
-  if (gameMusic) gameMusic.pause();
-
-  showEndScreen();
+  finishGame();
 }
 
 function showEndScreen() {
