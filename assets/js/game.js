@@ -15,6 +15,7 @@ var slicedPieces = [];
 var gameAnimationFrame = null;
 var spawnTimer = 0;
 var lastGameFrameTime = null;
+var waitForClearPoll = null;
 var slicedAI = 0;
 var slicedReal = 0;
 var currentCombo = 0;
@@ -457,11 +458,16 @@ function stopGameTimer() {
     clearInterval(gameTimerInterval);
     gameTimerInterval = null;
   }
+  if (waitForClearPoll) {
+    clearInterval(waitForClearPoll);
+    waitForClearPoll = null;
+  }
   if (gameAnimationFrame) {
     cancelAnimationFrame(gameAnimationFrame);
     gameAnimationFrame = null;
   }
   lastGameFrameTime = null;
+  document.removeEventListener("keydown", onGameDebugKeyDown);
   var gameMusic = document.getElementById("game-music");
   if (gameMusic) gameMusic.pause();
   stopGameSlash();
@@ -726,14 +732,21 @@ function initGame() {
   }, 1000);
 
   initGameSlash();
+  document.addEventListener("keydown", onGameDebugKeyDown);
 }
 
 function waitForClear() {
+  if (waitForClearPoll) {
+    clearInterval(waitForClearPoll);
+    waitForClearPoll = null;
+  }
+
   // Poll every 200ms until all items and pieces are gone from the canvas
-  var poll = setInterval(function () {
+  waitForClearPoll = setInterval(function () {
     var allGone = gameItems.length === 0 && slicedPieces.length === 0;
     if (allGone) {
-      clearInterval(poll);
+      clearInterval(waitForClearPoll);
+      waitForClearPoll = null;
       stopGameSlash();
       if (gameAnimationFrame) {
         cancelAnimationFrame(gameAnimationFrame);
@@ -744,6 +757,45 @@ function waitForClear() {
       showEndScreen();
     }
   }, 200);
+}
+
+function onGameDebugKeyDown(e) {
+  if (!e.ctrlKey || (e.key !== "e" && e.key !== "E")) return;
+  if (typeof currentView === "undefined" || currentView !== "game") return;
+
+  var endScreen = document.getElementById("game-end-screen");
+  if (endScreen && endScreen.classList.contains("visible")) return;
+
+  e.preventDefault();
+  endGameEarly();
+}
+
+function endGameEarly() {
+  if (gameTimerInterval) {
+    clearInterval(gameTimerInterval);
+    gameTimerInterval = null;
+  }
+  if (waitForClearPoll) {
+    clearInterval(waitForClearPoll);
+    waitForClearPoll = null;
+  }
+
+  gameElapsedSeconds = gameMaxSeconds;
+  updateGameHud();
+
+  gameItems = [];
+  slicedPieces = [];
+  stopGameSlash();
+
+  if (gameAnimationFrame) {
+    cancelAnimationFrame(gameAnimationFrame);
+    gameAnimationFrame = null;
+  }
+
+  var gameMusic = document.getElementById("game-music");
+  if (gameMusic) gameMusic.pause();
+
+  showEndScreen();
 }
 
 function showEndScreen() {
