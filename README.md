@@ -1,6 +1,6 @@
-# Wii.JS
+# SlopSlayer
 
-A browser-based recreation of the Wii Menu, built as a Creative Coding project. Navigate the familiar channel grid, then launch **SLOP Slice** — a fruit-ninja-style game where you slice AI-generated images for points while avoiding real photos. You have three lives; difficulty ramps over time and the run ends when you run out.
+A browser-based recreation of the Wii Menu, built as a Creative Coding project. Navigate the familiar channel grid, then launch **Slop Slayer** — a fruit-ninja-style game where you slice AI-generated images for points while avoiding real photos. You have three lives; difficulty ramps over time and the run ends when you run out.
 
 ## How to run
 
