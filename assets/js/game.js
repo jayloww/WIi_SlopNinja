@@ -61,6 +61,7 @@ realImages.forEach(src => {
 function ShuffledDeck(source) {
   this.source = source;
   this.deck = [];
+  this.lastDrawn = null;
 }
 ShuffledDeck.prototype._refill = function () {
   this.deck = this.source.slice();
@@ -69,15 +70,29 @@ ShuffledDeck.prototype._refill = function () {
     const j = Math.floor(Math.random() * (i + 1));
     const tmp = this.deck[i]; this.deck[i] = this.deck[j]; this.deck[j] = tmp;
   }
+
+  // Avoid drawing the same image twice in a row when starting a new cycle
+  if (this.lastDrawn && this.deck.length > 1) {
+    const lastSrc = this.lastDrawn.image.src;
+    const top = this.deck.length - 1;
+    if (this.deck[top].image.src === lastSrc) {
+      const swap = Math.floor(Math.random() * (this.deck.length - 1));
+      const tmp = this.deck[top];
+      this.deck[top] = this.deck[swap];
+      this.deck[swap] = tmp;
+    }
+  }
 };
 ShuffledDeck.prototype.draw = function () {
   if (this.deck.length === 0) this._refill();
-  return this.deck.pop();
+  this.lastDrawn = this.deck.pop();
+  return this.lastDrawn;
 };
 
-var deckAll = null;
 var deckAI = null;
 var deckReal = null;
+var spawnCountAI = 0;
+var spawnCountReal = 0;
 
 function resizeCanvas() {
   if (gameCanvas) {
@@ -115,10 +130,21 @@ function spawnFromPool(deck, xOverride) {
     rotation: Math.random() * Math.PI * 2,
     rotationSpeed: rotSpeed
   });
+
+  if (proto.type === "SLOP") spawnCountAI++;
+  else spawnCountReal++;
 }
 
 function throwItem() {
-  spawnFromPool(deckAll);
+  let deck;
+  if (spawnCountAI < spawnCountReal) {
+    deck = deckAI;
+  } else if (spawnCountReal < spawnCountAI) {
+    deck = deckReal;
+  } else {
+    deck = Math.random() < 0.5 ? deckAI : deckReal;
+  }
+  spawnFromPool(deck);
 }
 
 function throwPair() {
@@ -707,7 +733,6 @@ function initGame() {
     slicedPieces = [];
     spawnTimer = 0;
     lastGameFrameTime = null;
-    deckAll = new ShuffledDeck(ITEMS_POOL);
     deckAI = new ShuffledDeck(AI_POOL);
     deckReal = new ShuffledDeck(REAL_POOL);
     gameAnimationFrame = requestAnimationFrame(gameLoop);
@@ -717,6 +742,8 @@ function initGame() {
   gameScore = 0;
   slicedAI = 0;
   slicedReal = 0;
+  spawnCountAI = 0;
+  spawnCountReal = 0;
   currentCombo = 0;
   $("#combo-sticker").removeClass("pop-in");
   updateGameHud();
