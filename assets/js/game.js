@@ -18,6 +18,7 @@ var lastGameFrameTime = null;
 var waitForClearPoll = null;
 var slicedAI = 0;
 var slicedReal = 0;
+var missedAI = 0;
 var currentCombo = 0;
 const GRAVITY = 0.082;
 const FRAME_MS = 1000 / 60;
@@ -402,9 +403,12 @@ function gameLoop(now) {
     item.rotation += item.rotationSpeed * dt;
 
     if (item.y > gameCanvas.height + 200 && item.vy > 0) {
-      if (item.type === "SLOP" && currentCombo > 0) {
-        resetCombo();
-        playMissSound();
+      if (item.type === "SLOP") {
+        missedAI++;
+        if (currentCombo > 0) {
+          resetCombo();
+          playMissSound();
+        }
       }
       gameItems.splice(i, 1);
       continue;
@@ -744,6 +748,7 @@ function initGame() {
   slicedReal = 0;
   spawnCountAI = 0;
   spawnCountReal = 0;
+  missedAI = 0;
   currentCombo = 0;
   $("#combo-sticker").removeClass("pop-in");
   updateGameHud();
@@ -835,15 +840,128 @@ function endGameEarly() {
 }
 
 function showEndScreen() {
-  if (gameScore > getHighScore()) setHighScore(gameScore);
+  var isNewHighScore = gameScore > getHighScore();
+  if (isNewHighScore) setHighScore(gameScore);
 
   var el = document.getElementById("game-end-screen");
   if (!el) return;
 
-  document.getElementById("end-score-value").textContent = formatScore(gameScore);
+  var scoreValEl = document.getElementById("end-score-value");
+  var bannerEl = document.getElementById("new-highscore-banner");
+
+  if (scoreValEl) {
+    scoreValEl.classList.remove("new-highscore-glow");
+    scoreValEl.textContent = formatScore(gameScore);
+  }
+  if (bannerEl) {
+    bannerEl.classList.remove("show");
+  }
+
+  if (isNewHighScore) {
+    if (scoreValEl) scoreValEl.classList.add("new-highscore-glow");
+    if (bannerEl) bannerEl.classList.add("show");
+  }
+
   document.getElementById("end-highscore-value").textContent = formatScore(getHighScore());
   document.getElementById("end-stat-ai").textContent = slicedAI;
   document.getElementById("end-stat-real").textContent = slicedReal;
+
+  // Set missed AI images count
+  var missedEl = document.getElementById("end-stat-missed");
+  if (missedEl) missedEl.textContent = missedAI;
+
+  // Manage leaderboard
+  var leaderboard = [];
+  var rawLeaderboard = localStorage.getItem("wii-game-leaderboard");
+  if (rawLeaderboard) {
+    try {
+      leaderboard = JSON.parse(rawLeaderboard);
+    } catch (e) {
+      leaderboard = [];
+    }
+  }
+
+  // Create current game entry with a unique ID
+  var currentEntryId = "score-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  var currentEntry = {
+    id: currentEntryId,
+    score: gameScore,
+    timestamp: Date.now()
+  };
+
+  leaderboard.push(currentEntry);
+  leaderboard.sort(function(a, b) {
+    return b.score - a.score;
+  });
+
+  // Keep top 100 and store
+  leaderboard = leaderboard.slice(0, 100);
+  localStorage.setItem("wii-game-leaderboard", JSON.stringify(leaderboard));
+
+  // Helper to create an entry DOM element
+  function createEntryElement(entry, rank, isCurrent) {
+    var entryDiv = document.createElement("div");
+    entryDiv.className = "leaderboard-entry";
+    if (isCurrent) {
+      entryDiv.classList.add("highlight-entry");
+    }
+
+    if (rank === 1) {
+      entryDiv.classList.add("gold-place");
+    } else if (rank === 2) {
+      entryDiv.classList.add("silver-place");
+    } else if (rank === 3) {
+      entryDiv.classList.add("bronze-place");
+    }
+
+    var rankSpan = document.createElement("span");
+    rankSpan.className = "leaderboard-entry-rank";
+    rankSpan.textContent = rank + ".";
+
+    var scoreSpan = document.createElement("span");
+    scoreSpan.className = "leaderboard-entry-score";
+    scoreSpan.textContent = formatScore(entry.score);
+
+    entryDiv.appendChild(rankSpan);
+    entryDiv.appendChild(scoreSpan);
+    return entryDiv;
+  }
+
+  // Render leaderboard entries
+  var leaderboardEl = document.getElementById("leaderboard-entries");
+  if (leaderboardEl) {
+    leaderboardEl.innerHTML = "";
+
+    // Find rank of the current score in the sorted list
+    var currentRank = -1;
+    for (var i = 0; i < leaderboard.length; i++) {
+      if (leaderboard[i].id === currentEntryId) {
+        currentRank = i + 1; // 1-indexed rank
+        break;
+      }
+    }
+
+    // Render top 5
+    var limit = Math.min(leaderboard.length, 5);
+    for (var index = 0; index < limit; index++) {
+      var entry = leaderboard[index];
+      var entryDiv = createEntryElement(entry, index + 1, entry.id === currentEntryId);
+      leaderboardEl.appendChild(entryDiv);
+    }
+
+    // If current score is not in the top 5, append a separator and the current score entry
+    if (currentRank > 5) {
+      var sepDiv = document.createElement("div");
+      sepDiv.className = "leaderboard-separator";
+      sepDiv.textContent = "• • •";
+      leaderboardEl.appendChild(sepDiv);
+
+      var userEntry = leaderboard[currentRank - 1];
+      var entryDiv = createEntryElement(userEntry, currentRank, true);
+      leaderboardEl.appendChild(entryDiv);
+    }
+  }
+
   el.classList.add("visible");
 
   // Restore Wii cursor for the end screen
