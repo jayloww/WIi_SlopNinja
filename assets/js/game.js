@@ -252,41 +252,66 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
   } else {
     slicedReal++;
     // Slicing a real image breaks the combo immediately
-    currentCombo = 0;
-    $("#combo-sticker").removeClass("pop-in");
-    playErrorSound();
+    resetCombo();
+    playRealSliceErrorSound();
   }
   updateGameHud();
 }
 
+function resetCombo() {
+  currentCombo = 0;
+  $("#combo-sticker").removeClass("pop-in");
+}
+
 var audioCtx = null;
-function playErrorSound() {
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playTone(freqStart, freqEnd, duration, type, volume) {
   try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    var oscillator = audioCtx.createOscillator();
-    var gainNode = audioCtx.createGain();
+    var ctx = getAudioCtx();
+    var oscillator = ctx.createOscillator();
+    var gainNode = ctx.createGain();
+    var now = ctx.currentTime;
 
-    // A harsh, low-pitched sawtooth wave for an error buzz
-    oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(120, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(freqStart, now);
+    if (freqEnd !== freqStart) {
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), now + duration);
+    }
 
-    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(volume, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
 
     oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    gainNode.connect(ctx.destination);
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.2);
+    oscillator.start(now);
+    oscillator.stop(now + duration);
   } catch (e) {
     console.log("Web Audio API not supported or failed", e);
   }
+}
+
+function playRealSliceErrorSound() {
+  // Harsh, punishing low buzz for slicing a real image
+  playTone(100, 32, 0.38, "sawtooth", 0.72);
+  playTone(170, 55, 0.3, "square", 0.38);
+}
+
+function playMissSound() {
+  // Two quick descending tones for letting an AI image escape
+  playTone(600, 360, 0.14, "square", 0.42);
+  setTimeout(function () {
+    playTone(480, 260, 0.18, "square", 0.42);
+  }, 110);
 }
 
 /* ── check slash segment against all live items ── */
@@ -350,6 +375,10 @@ function gameLoop(now) {
     item.rotation += item.rotationSpeed * dt;
 
     if (item.y > gameCanvas.height + 200 && item.vy > 0) {
+      if (item.type === "SLOP" && currentCombo > 0) {
+        resetCombo();
+        playMissSound();
+      }
       gameItems.splice(i, 1);
       continue;
     }
