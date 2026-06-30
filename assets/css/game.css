@@ -56,6 +56,7 @@
 
 .game-hud-right {
   align-items: flex-end;
+  gap: 14px;
 }
 
 .hud-label {
@@ -155,34 +156,71 @@
   100% { transform: scale(1.2); opacity: 1; }
 }
 
-.hud-timer-pill {
-  border: 2px solid #ffffff;
-  border-radius: 999px;
-  padding: 4px 22px;
-  color: #ffffff;
+.hud-timer {
   font-family: 'Asap', sans-serif;
-  font-size: clamp(28px, 4vw, 40px);
+  font-size: clamp(40px, 6.8vw, 68px);
   font-weight: 700;
-  line-height: 1.2;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+
+.hud-lives {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.life-icon {
+  font-size: clamp(20px, 2.8vw, 28px);
+  line-height: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.life-icon.filled {
+  color: #ff4d6d;
+  text-shadow: 0 0 8px rgba(255, 77, 109, 0.45);
+  opacity: 1;
+}
+
+.life-icon.empty {
+  color: rgba(255, 255, 255, 0.25);
+  opacity: 0.4;
+  transform: scale(0.9);
+}
+
+.life-icon.losing {
+  animation: lifeLost 0.5s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes lifeLost {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.7);
+    opacity: 0.2;
+  }
+}
+
+.hud-timer-pill {
+  display: none;
 }
 
 .hud-progress {
-  width: clamp(140px, 18vw, 220px);
-  height: 26px;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  border-radius: 999px;
-  margin-top: 10px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.18);
-  box-sizing: border-box;
+  display: none;
 }
 
 .hud-progress-fill {
-  height: 100%;
-  background: #ffffff;
-  border-radius: 999px;
-  width: 0%;
-  transition: width 0.25s linear;
+  display: none;
 }
 
 /* ── end screen ── */
