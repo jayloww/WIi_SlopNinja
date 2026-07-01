@@ -1,4 +1,4 @@
-/* Presentation Channel Styles */
+/* Presentation Channel Styles with Reveal.js Integration */
 .presentation-wrapper {
   position: absolute;
   top: 0;
@@ -12,86 +12,83 @@
   z-index: 10;
 }
 
-.pres-slide {
+/* Ensure Reveal.js takes full width/height but is under UI */
+.reveal {
+  width: 100%;
+  height: 100%;
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
+}
+
+/* Professional Presentation Card Style */
+.pres-content {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  background: transparent;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  align-items: center;
+  height: 100%;
+  width: 100%;
 }
 
-.pres-slide.active {
-  visibility: visible;
-  opacity: 1;
-  z-index: 2;
-}
-
-/* Glassmorphism Card Style */
-.glass-card {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(20px) saturate(130%);
-  -webkit-backdrop-filter: blur(20px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 24px;
-  padding: 4vh 4vw;
-  box-shadow: 0 12px 40px rgba(255, 0, 127, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+.presentation-card {
+  background: #ffffff;
+  border: 4px solid #d4d4d4; /* Clean Wii-style border */
+  border-radius: 16px;
+  padding: 50px 60px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   max-width: 900px;
-  width: 85%;
+  width: 100%;
   margin: 0 auto;
-  text-align: center;
-  transition: transform 0.3s ease;
+  text-align: left; /* Standard clean presentation layout */
+  /* Remove font scaling from Reveal.js overrides by enforcing font-family */
+  font-family: 'Asap', sans-serif;
 }
 
-.glass-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 48px rgba(255, 0, 127, 0.15), 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-.pres-content h1 {
-  font-size: 3.5vw;
-  color: #2c001e;
+.presentation-card h1 {
+  font-size: 48px;
+  color: #333;
   margin-top: 0;
-  margin-bottom: 2vh;
+  margin-bottom: 20px;
   font-weight: 700;
-  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+  border-bottom: 4px solid #00aaff; /* Professional Wii blue accent */
+  padding-bottom: 15px;
+  text-transform: none; /* Override Reveal default */
+  font-family: 'Asap', sans-serif;
 }
 
-.pres-content p {
-  font-size: 1.6vw;
-  color: #4a3b45;
-  line-height: 1.5;
-  margin-bottom: 3vh;
+.presentation-card p {
+  font-size: 26px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 30px;
 }
 
-.pres-subtitle {
-  font-weight: 500;
-  font-size: 1.8vw;
+.presentation-card .pres-subtitle {
+  font-weight: 600;
+  font-size: 30px;
+  color: #777;
+  margin-bottom: 25px;
+  border-bottom: none;
 }
 
-/* Visual Components instead of Placeholders */
+/* Visual Components */
 .pres-visual {
-  margin: 2vh auto 0 auto;
+  margin: 30px auto 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
+  max-width: 600px;
 }
 
 /* Slide 0: Nostalgie */
 .nostalgia-visual {
   max-width: 450px;
-  border: 8px solid #fff;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  border: 6px solid #f0f0f0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   background: #000;
 }
 .retro-tv-image {
@@ -101,20 +98,20 @@
 }
 .retro-badge {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: #ff007f;
+  bottom: 15px;
+  right: 15px;
+  background: #00aaff;
   color: #fff;
-  font-size: 1.1vw;
+  font-size: 18px;
   font-weight: bold;
-  padding: 6px 12px;
+  padding: 8px 16px;
   border-radius: 20px;
-  box-shadow: 0 4px 10px rgba(255, 0, 127, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 170, 255, 0.3);
 }
 
 /* Slide 1: AI Stack Infiltration */
 .slop-infiltration-visual {
-  height: 25vh;
+  height: 250px;
   width: 100%;
   overflow: visible;
 }
@@ -126,20 +123,20 @@
 }
 .slop-stack-img {
   position: absolute;
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   object-fit: cover;
-  border: 6px solid #fff;
+  border: 4px solid #fff;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   transition: transform 0.3s ease;
 }
 .slop-1 {
-  transform: rotate(-12deg) translate(-40px, 0);
+  transform: rotate(-12deg) translate(-50px, 0);
   z-index: 1;
 }
 .slop-2 {
-  transform: rotate(8deg) translate(40px, 10px);
+  transform: rotate(8deg) translate(50px, 10px);
   z-index: 2;
 }
 .slop-3 {
@@ -147,10 +144,10 @@
   z-index: 3;
 }
 .slop-infiltration-visual:hover .slop-1 {
-  transform: rotate(-18deg) translate(-65px, -10px);
+  transform: rotate(-18deg) translate(-75px, -10px);
 }
 .slop-infiltration-visual:hover .slop-2 {
-  transform: rotate(14deg) translate(65px, 20px);
+  transform: rotate(14deg) translate(75px, 20px);
 }
 .slop-infiltration-visual:hover .slop-3 {
   transform: scale(1.1) rotate(0deg) translate(0px, -15px);
@@ -158,13 +155,13 @@
 
 /* Slide 2: Active Slice */
 .active-slice-visual {
-  height: 25vh;
+  height: 250px;
   width: 100%;
 }
 .sliced-image-container {
   position: relative;
-  width: 220px;
-  height: 160px;
+  width: 260px;
+  height: 190px;
   margin: 0 auto;
   overflow: visible;
 }
@@ -176,10 +173,10 @@
   transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .sliced-half img {
-  width: 220px;
-  height: 160px;
+  width: 260px;
+  height: 190px;
   object-fit: cover;
-  border: 6px solid #fff;
+  border: 4px solid #fff;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   display: block;
@@ -213,53 +210,53 @@
 /* Slide 3: Overwhelming Grid */
 .overwhelming-visual {
   width: 100%;
-  height: 25vh;
+  height: 250px;
 }
 .grid-overwhelmed {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 .grid-img {
   width: 100%;
-  height: 12vh;
+  height: 110px;
   object-fit: cover;
-  border: 4px solid #fff;
+  border: 3px solid #eee;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   transition: transform 0.3s ease;
 }
 .grid-img:nth-child(even) {
-  transform: rotate(5deg);
+  transform: rotate(4deg);
 }
 .grid-img:nth-child(odd) {
-  transform: rotate(-5deg);
+  transform: rotate(-4deg);
 }
 .grid-overwhelmed:hover .grid-img {
   transform: scale(1.1) rotate(0deg);
-  box-shadow: 0 8px 18px rgba(255, 0, 127, 0.2);
+  box-shadow: 0 8px 18px rgba(0, 170, 255, 0.2);
 }
 
 /* Slide 4: Real vs AI Compare */
 .compare-visual {
   width: 100%;
-  height: 26vh;
+  height: 260px;
 }
 .compare-container {
   display: flex;
   justify-content: center;
-  gap: 30px;
+  gap: 40px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
 }
 .compare-card {
   position: relative;
-  width: 160px;
-  border: 6px solid #fff;
+  width: 190px;
+  border: 4px solid #eee;
   border-radius: 12px;
   box-shadow: 0 6px 15px rgba(0,0,0,0.1);
   overflow: visible;
@@ -267,19 +264,19 @@
 }
 .compare-card img {
   width: 100%;
-  height: 15vh;
+  height: 150px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   display: block;
 }
 .badge {
   position: absolute;
-  top: -12px;
+  top: -15px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.9vw;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 14px;
   font-weight: bold;
   color: white;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
@@ -289,10 +286,10 @@
   background: #28a745;
 }
 .ai-badge {
-  background: #ff007f;
+  background: #00aaff; /* professional highlight color */
 }
 .compare-card:hover {
-  transform: scale(1.08) translateY(-5px);
+  transform: scale(1.05) translateY(-5px);
 }
 
 /* UI overlay */
@@ -355,9 +352,15 @@
   width: 100%;
   height: 100%;
   background: transparent;
-  z-index: 5;
+  z-index: 25;
   pointer-events: none;
   perspective: 1000px;
+}
+
+/* Make sure the reveal container clone has the background and is solid */
+.slice-layer .reveal {
+  background: url('../images/4K_PinkCloud_BackgroundImage1.png') no-repeat center center;
+  background-size: cover;
 }
 
 .slice-half-1 {
@@ -426,4 +429,3 @@
   opacity: 1;
   transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.4s ease-out;
 }
-

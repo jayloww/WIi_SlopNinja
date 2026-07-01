@@ -1,6 +1,3 @@
-let currentSlideIndex = 0;
-const totalSlides = 5;
-
 // Variables for slice detection
 let isSwiping = false;
 let startX, startY;
@@ -8,28 +5,28 @@ let startTime;
 
 // Reset presentation state when loading
 function initPresentation() {
-  currentSlideIndex = 0;
-  updateSlides();
+  if (typeof Reveal !== 'undefined') {
+    Reveal.initialize({
+      controls: false,
+      progress: true,
+      transition: 'none', // We use our own slice animation over the slide change
+      keyboard: false,
+      touch: false, // We use custom swipe logic
+      embedded: true, // Crucial for embedding in the #presentation-container
+      hash: false,
+      center: true
+    }).then(() => {
+      Reveal.sync();
+      Reveal.slide(0);
+    });
+  }
+  
   setupSwipeZone();
-}
-
-function updateSlides() {
-  const slides = document.querySelectorAll('.pres-slide');
-  if (!slides || slides.length === 0) return;
-
-  slides.forEach((slide, index) => {
-    if (index === currentSlideIndex) {
-      slide.classList.add('active');
-      slide.style.visibility = 'visible';
-    } else {
-      slide.classList.remove('active');
-    }
-  });
 }
 
 function nextSlide() {
   select(); // play select audio
-  if (currentSlideIndex < totalSlides - 1) {
+  if (typeof Reveal !== 'undefined' && !Reveal.isLastSlide()) {
     // Generate mock diagonal cut coordinates for button press
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -45,9 +42,8 @@ function nextSlide() {
 
 function prevSlide() {
   select(); // play select audio
-  if (currentSlideIndex > 0) {
-    currentSlideIndex--;
-    updateSlides();
+  if (typeof Reveal !== 'undefined' && !Reveal.isFirstSlide()) {
+    Reveal.prev();
   }
 }
 
@@ -115,7 +111,7 @@ function createSparksCanvas(sx, sy, ex, ey) {
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.alpha);
         ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ff007f';
+        ctx.shadowColor = '#00aaff'; // Updated to professional blue
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -167,9 +163,9 @@ function createSlashTrail(sx, sy, ex, ey) {
   }, 400);
 }
 
-// Slice animation logic
+// Slice animation logic interacting with Reveal.js
 function sliceToNextSlide(sx, sy, ex, ey) {
-  if (currentSlideIndex >= totalSlides - 1) {
+  if (typeof Reveal === 'undefined' || Reveal.isLastSlide()) {
     exitPresentation();
     return;
   }
@@ -184,44 +180,46 @@ function sliceToNextSlide(sx, sy, ex, ey) {
     ey = height * 0.8;
   }
 
+  // Play slash sound if available
+  const slashAudio = document.getElementById('slash-sound');
+  if (slashAudio) {
+    slashAudio.currentTime = 0;
+    slashAudio.play().catch(e => console.log("Audio play error", e));
+  }
+
   // Create visual slice FX (glowing trail & spark burst)
   createSlashTrail(sx, sy, ex, ey);
   createSparksCanvas(sx, sy, ex, ey);
 
   const container = document.getElementById('presentation-container');
-  const currentSlide = document.getElementById('pres-slide-' + currentSlideIndex);
+  const revealNode = document.querySelector('.reveal');
   
-  if (!currentSlide || !container) return;
+  if (!revealNode || !container) return;
 
-  // Clone current slide twice for the two halves
-  const clone1 = currentSlide.cloneNode(true);
-  const clone2 = currentSlide.cloneNode(true);
+  // Clone current reveal state twice for the two halves
+  const clone1 = revealNode.cloneNode(true);
+  const clone2 = revealNode.cloneNode(true);
 
-  clone1.id = '';
-  clone2.id = '';
-  
-  clone1.className = 'slice-layer slice-half-1';
-  clone2.className = 'slice-layer slice-half-2';
+  // Wrappers to apply the slice animations
+  const wrapper1 = document.createElement('div');
+  wrapper1.className = 'slice-layer slice-half-1';
+  wrapper1.appendChild(clone1);
+
+  const wrapper2 = document.createElement('div');
+  wrapper2.className = 'slice-layer slice-half-2';
+  wrapper2.appendChild(clone2);
 
   // Append clones
-  container.appendChild(clone1);
-  container.appendChild(clone2);
+  container.appendChild(wrapper1);
+  container.appendChild(wrapper2);
 
-  // Hide original slide and go to next
-  currentSlide.classList.remove('active');
-  currentSlide.style.visibility = 'hidden'; 
-  
-  currentSlideIndex++;
-  const nextSlideEl = document.getElementById('pres-slide-' + currentSlideIndex);
-  if (nextSlideEl) {
-    nextSlideEl.classList.add('active');
-    nextSlideEl.style.visibility = 'visible';
-  }
+  // Go to next slide instantly (Reveal handles this behind the clones because transition: 'none')
+  Reveal.next();
 
   // Clean up clones after animation
   setTimeout(() => {
-    if (container.contains(clone1)) container.removeChild(clone1);
-    if (container.contains(clone2)) container.removeChild(clone2);
+    if (container.contains(wrapper1)) container.removeChild(wrapper1);
+    if (container.contains(wrapper2)) container.removeChild(wrapper2);
   }, 1000);
 }
 
