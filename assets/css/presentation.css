@@ -7,7 +7,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: url('../images/4K_PinkCloud_BackgroundImage1.png') no-repeat center center;
+  background: url('../images/miichannel.jpg') no-repeat center center;
   background-size: cover;
   font-family: 'Asap', sans-serif;
   z-index: 10;
@@ -71,7 +71,6 @@
   max-width: 1400px;
   height: 70vh;
   margin: 0 auto;
-  transform: translateY(-4vh); /* Push up to avoid button row conflict */
 }
 
 /* Transparency on text cards */

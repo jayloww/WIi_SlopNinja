@@ -116,14 +116,9 @@ function updateSlides() {
 function nextSlide() {
   select(); // play select audio
   if (currentSlideIndex < totalSlides - 1) {
-    // Generate mock diagonal cut coordinates for button press
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const sx = width * 0.8;
-    const sy = height * 0.2;
-    const ex = width * 0.2;
-    const ey = height * 0.8;
-    sliceToNextSlide(sx, sy, ex, ey);
+    triggerSlice(width * 0.2, height * 0.5, width * 0.8, height * 0.5, true);
   } else {
     stopBackgroundLoop();
     exitPresentation(); // Exit if last slide
@@ -133,8 +128,9 @@ function nextSlide() {
 function prevSlide() {
   select(); // play select audio
   if (currentSlideIndex > 0) {
-    currentSlideIndex--;
-    updateSlides();
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    triggerSlice(width * 0.8, height * 0.5, width * 0.2, height * 0.5, false);
   }
 }
 
@@ -255,21 +251,14 @@ function createSlashTrail(sx, sy, ex, ey) {
 }
 
 // Custom Slice animation logic
-function sliceToNextSlide(sx, sy, ex, ey) {
-  if (currentSlideIndex >= totalSlides - 1) {
+function triggerSlice(sx, sy, ex, ey, isNext = true) {
+  if (isNext && currentSlideIndex >= totalSlides - 1) {
     stopBackgroundLoop();
     exitPresentation();
     return;
   }
-
-  // Ensure coordinate fallback if called without parameters
-  if (sx === undefined || sy === undefined || ex === undefined || ey === undefined) {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    sx = width * 0.8;
-    sy = height * 0.2;
-    ex = width * 0.2;
-    ey = height * 0.8;
+  if (!isNext && currentSlideIndex <= 0) {
+    return;
   }
 
   // Play slash sound if available
@@ -312,7 +301,11 @@ function sliceToNextSlide(sx, sy, ex, ey) {
   container.appendChild(wrapper2);
 
   // Update slide index and switch active class
-  currentSlideIndex++;
+  if (isNext) {
+    currentSlideIndex++;
+  } else {
+    currentSlideIndex--;
+  }
   updateSlides();
 
   // Clean up clones after animation
@@ -370,6 +363,7 @@ function handleSwipeEnd(e) {
   // If the swipe was fast and long enough, trigger slice with exact coordinates
   // Threshold: distance > 150px and duration < 500ms
   if (distance > 150 && duration < 500) {
-    sliceToNextSlide(startX, startY, endX, endY);
+    const isNext = deltaX > 0;
+    triggerSlice(startX, startY, endX, endY, isNext);
   }
 }
