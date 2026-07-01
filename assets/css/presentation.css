@@ -71,6 +71,7 @@
   max-width: 1400px;
   height: 70vh;
   margin: 0 auto;
+  transform: translateY(-4vh); /* Push up to avoid button row conflict */
 }
 
 /* Transparency on text cards */
