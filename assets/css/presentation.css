@@ -363,18 +363,19 @@
 .slice-half-1 {
   clip-path: polygon(0 0, 110% 0, 0 100%);
   animation: sliceUpLeft 0.8s cubic-bezier(0.1, 1, 0.2, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .slice-half-2 {
   clip-path: polygon(110% 0, 100% 100%, 0 100%);
   animation: sliceDownRight 0.8s cubic-bezier(0.1, 1, 0.2, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @keyframes sliceUpLeft {
   0% {
     transform: translate3d(0, 0, 0) rotate(0deg);
     opacity: 1;
-    filter: blur(0px);
   }
   20% {
     transform: translate3d(-4vw, -2vh, 15px) rotate(-1.5deg);
@@ -383,7 +384,6 @@
   100% {
     transform: translate3d(-35vw, -20vh, -120px) rotate(-18deg);
     opacity: 0;
-    filter: blur(10px);
   }
 }
 
@@ -391,7 +391,6 @@
   0% {
     transform: translate3d(0, 0, 0) rotate(0deg);
     opacity: 1;
-    filter: blur(0px);
   }
   20% {
     transform: translate3d(4vw, 2vh, 15px) rotate(1.5deg);
@@ -400,7 +399,6 @@
   100% {
     transform: translate3d(35vw, 35vh, -120px) rotate(18deg);
     opacity: 0;
-    filter: blur(10px);
   }
 }
 
@@ -429,21 +427,3 @@
   transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.4s ease-out;
 }
 
-/* Spark Particle Effects */
-.pres-spark {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: #ff007f;
-  box-shadow: 0 0 10px #ff007f, 0 0 4px #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99;
-  transform: translate3d(0, 0, 0) scale(1);
-  opacity: 1;
-  transition: transform 0.8s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.8s ease-out;
-}
-.pres-spark.fly {
-  transform: translate3d(var(--vx), var(--vy), 0) scale(0.1);
-  opacity: 0;
-}

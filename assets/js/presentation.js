@@ -51,44 +51,91 @@ function prevSlide() {
   }
 }
 
-// Spark/Particle Generator
-function createSparks(sx, sy, ex, ey) {
+// High-Performance Canvas Spark/Particle Generator
+function createSparksCanvas(sx, sy, ex, ey) {
   const container = document.getElementById('presentation-container');
   if (!container) return;
 
-  const numSparks = 25;
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '99';
+  container.appendChild(canvas);
+
+  // Set logical resolution matching window viewport
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const ctx = canvas.getContext('2d');
+  const particles = [];
   const dx = ex - sx;
   const dy = ey - sy;
+  const numSparks = 30;
 
+  // Generate particles along the swipe vector
   for (let i = 0; i < numSparks; i++) {
     const pct = i / (numSparks - 1);
-    const x = sx + dx * pct;
-    const y = sy + dy * pct;
+    const px = sx + dx * pct;
+    const py = sy + dy * pct;
 
-    const spark = document.createElement('div');
-    spark.className = 'pres-spark';
-    container.appendChild(spark);
-
-    spark.style.left = `${x}px`;
-    spark.style.top = `${y}px`;
-
-    // Random direction and velocity
     const angle = Math.random() * Math.PI * 2;
-    const speed = 100 + Math.random() * 250; // px/sec
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
+    const speed = 2 + Math.random() * 6; // pixels per frame
+    const size = 2 + Math.random() * 3;
+    const decay = 0.015 + Math.random() * 0.02;
 
-    spark.style.setProperty('--vx', `${vx}px`);
-    spark.style.setProperty('--vy', `${vy}px`);
-
-    // Reflow and fly
-    spark.offsetHeight;
-    spark.classList.add('fly');
-
-    setTimeout(() => {
-      if (container.contains(spark)) container.removeChild(spark);
-    }, 800);
+    particles.push({
+      x: px,
+      y: py,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: size,
+      alpha: 1,
+      decay: decay
+    });
   }
+
+  // Animation Loop running on compositor frame rates
+  function drawFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let hasActiveParticles = false;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      if (p.alpha > 0) {
+        // Move with drag friction
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1; // subtle gravity drift
+        p.alpha -= p.decay;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ff007f';
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        hasActiveParticles = true;
+      }
+    }
+
+    if (hasActiveParticles) {
+      requestAnimationFrame(drawFrame);
+    } else {
+      if (container.contains(canvas)) {
+        container.removeChild(canvas);
+      }
+    }
+  }
+
+  requestAnimationFrame(drawFrame);
 }
 
 // Glowing Sword-Slash Trail
@@ -139,7 +186,7 @@ function sliceToNextSlide(sx, sy, ex, ey) {
 
   // Create visual slice FX (glowing trail & spark burst)
   createSlashTrail(sx, sy, ex, ey);
-  createSparks(sx, sy, ex, ey);
+  createSparksCanvas(sx, sy, ex, ey);
 
   const container = document.getElementById('presentation-container');
   const currentSlide = document.getElementById('pres-slide-' + currentSlideIndex);
