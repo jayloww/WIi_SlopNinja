@@ -308,7 +308,7 @@
   font-size: 1.8vw;
   font-weight: bold;
   font-family: 'Asap', sans-serif;
-  color: #00aaff;
+  color: #333;
   cursor: url(../images/cursor.png), auto !important;
   box-shadow: 0 0.5vw 1vw rgba(0,0,0,0.1), inset 0 0.2vw 0.5vw rgba(255,255,255,1);
   transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, color 150ms ease;
@@ -318,9 +318,9 @@
 
 .wii-btn:hover {
   transform: scale(1.05);
-  /* Strong blue glow requested by user */
-  box-shadow: 0 0 2vw 0.5vw rgba(0,170,255,0.7), inset 0 0.2vw 0.5vw rgba(255,255,255,1);
-  border-color: #00aaff;
+  /* Classic Wii Cyan glow */
+  box-shadow: 0 0 2vw 0.5vw rgba(0,195,227,0.7), inset 0 0.2vw 0.5vw rgba(255,255,255,1);
+  border-color: #00c3e3;
 }
 
 .wii-btn:active {
