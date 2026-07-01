@@ -20,7 +20,7 @@ function idleReturnToMenu() {
   if (typeof stopGameTimer === "function") stopGameTimer();
 
   // reset audio
-  ["idle-music", "game-music"].forEach(function(id) {
+  ["idle-music", "presentation-idle-music", "game-music"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) { el.pause(); el.currentTime = 0; }
   });
@@ -69,14 +69,25 @@ function select(){
 }
 
 // zip audio
-function zip(){
+function zip(el){
 	var audio = document.getElementById("zip");
 	audio.play();
 	select();
 	var bg = document.getElementById("bg-music");
 	if (bg) bg.pause();
+	
+	// pause any existing splash music
 	var idle = document.getElementById("idle-music");
-	if (idle) idle.play();
+	if (idle) idle.pause();
+	var presIdle = document.getElementById("presentation-idle-music");
+	if (presIdle) presIdle.pause();
+
+	var musicId = (el && el.getAttribute("data-music")) ? el.getAttribute("data-music") : "idle-music";
+	var activeIdle = document.getElementById(musicId);
+	if (activeIdle) {
+		activeIdle.currentTime = 0;
+		activeIdle.play();
+	}
 }
 
 // back
@@ -85,6 +96,8 @@ function back(){
 	audio.play();
 	var idle = document.getElementById("idle-music");
 	if (idle) idle.pause();
+	var presIdle = document.getElementById("presentation-idle-music");
+	if (presIdle) presIdle.pause();
 	var bg = document.getElementById("bg-music");
 	if (bg) bg.play();
 }
@@ -173,4 +186,10 @@ function startPresentation() {
   select();
   previousView = currentView || "menu";
   changeView("presentation", "fade");
+}
+
+function exitPresentation() {
+  back();
+  $("body").removeClass("channel-splash splash-switch");
+  changeView("menu", "fade");
 }

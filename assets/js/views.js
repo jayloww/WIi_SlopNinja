@@ -54,6 +54,21 @@ function loadViewContents(v, t) {
           initGame();
         }
 
+        if (v === "presentation") {
+          var idle = document.getElementById("idle-music");
+          if (idle) idle.pause();
+          var bg = document.getElementById("bg-music");
+          if (bg) bg.pause();
+          var presMusic = document.getElementById("presentation-music");
+          if (presMusic) {
+            presMusic.currentTime = 0;
+            presMusic.play();
+          }
+        } else {
+          var presMusic = document.getElementById("presentation-music");
+          if (presMusic) presMusic.pause();
+        }
+
         if (v !== "game") {
           stopGameTimer();
           $("body").removeClass("in-game end-screen-open");
