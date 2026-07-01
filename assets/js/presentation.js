@@ -261,12 +261,6 @@ function triggerSlice(sx, sy, ex, ey, isNext = true) {
     return;
   }
 
-  // Play slash sound if available
-  const slashAudio = document.getElementById('slash-sound');
-  if (slashAudio) {
-    slashAudio.currentTime = 0;
-    slashAudio.play().catch(e => console.log("Audio play error", e));
-  }
 
   // Create visual slice FX (glowing trail & spark burst)
   createSlashTrail(sx, sy, ex, ey);
