@@ -18,6 +18,8 @@ var slicedPieces = [];
 var gameAnimationFrame = null;
 var spawnTimer = 0;
 var lastGameFrameTime = null;
+var floatIndicators = [];
+var missFlashAlpha = 0;
 var slicedAI = 0;
 var slicedReal = 0;
 var missedAI = 0;
@@ -427,6 +429,65 @@ function playMissSound() {
   }, 110);
 }
 
+/* ── visual feedback when an AI image is missed ── */
+function spawnMissIndicator(x) {
+  if (!gameCanvas) return;
+  var margin = gameCanvas.width * 0.12;
+  var cx = Math.max(margin, Math.min(gameCanvas.width - margin, x));
+  var cy = gameCanvas.height - gameCanvas.height * 0.16;
+  floatIndicators.push({ text: "MISSED!", x: cx, y: cy, age: 0, life: 950 });
+  missFlashAlpha = 1;
+}
+
+function updateAndDrawIndicators(deltaMs) {
+  // Red edge flash
+  if (missFlashAlpha > 0) {
+    missFlashAlpha = Math.max(0, missFlashAlpha - deltaMs / 500);
+    var w = gameCanvas.width, h = gameCanvas.height;
+    var grad = gameCtx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.32,
+      w / 2, h / 2, Math.max(w, h) * 0.72
+    );
+    grad.addColorStop(0, "rgba(255, 30, 70, 0)");
+    grad.addColorStop(1, "rgba(255, 30, 70, " + (0.4 * missFlashAlpha) + ")");
+    gameCtx.save();
+    gameCtx.fillStyle = grad;
+    gameCtx.fillRect(0, 0, w, h);
+    gameCtx.restore();
+  }
+
+  if (floatIndicators.length === 0) return;
+
+  var baseFont = Math.max(26, Math.min(gameCanvas.width, gameCanvas.height) * 0.05);
+
+  for (var i = floatIndicators.length - 1; i >= 0; i--) {
+    var f = floatIndicators[i];
+    f.age += deltaMs;
+    var t = f.age / f.life;
+    if (t >= 1) { floatIndicators.splice(i, 1); continue; }
+
+    var y = f.y - t * (gameCanvas.height * 0.08);
+    var alpha = t < 0.15 ? (t / 0.15) : 1 - (t - 0.15) / 0.85;
+    var pop = 0.7 + Math.min(t * 4, 1) * 0.4;
+
+    gameCtx.save();
+    gameCtx.globalAlpha = Math.max(alpha, 0);
+    gameCtx.translate(f.x, y);
+    gameCtx.scale(pop, pop);
+    gameCtx.textAlign = "center";
+    gameCtx.textBaseline = "middle";
+
+    gameCtx.font = "700 " + baseFont + "px 'Asap', sans-serif";
+    gameCtx.lineWidth = baseFont * 0.16;
+    gameCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+    gameCtx.strokeText(f.text, 0, 0);
+    gameCtx.fillStyle = "#ff5470";
+    gameCtx.fillText(f.text, 0, 0);
+
+    gameCtx.restore();
+  }
+}
+
 /* ── check slash segment against all live items ── */
 function checkSliceCollisions(x1, y1, x2, y2) {
   for (let i = gameItems.length - 1; i >= 0; i--) {
@@ -489,6 +550,7 @@ function gameLoop(now) {
         missedAI++;
         resetCombo();
         playMissSound();
+        spawnMissIndicator(item.x);
         loseLife();
       }
       gameItems.splice(i, 1);
@@ -544,6 +606,8 @@ function gameLoop(now) {
     drawCard(gameCtx, img, p.halfW, p.halfH);
     gameCtx.restore();
   }
+
+  updateAndDrawIndicators(deltaMs);
 
   gameAnimationFrame = requestAnimationFrame(gameLoop);
 }
@@ -866,6 +930,8 @@ function initGame() {
   spawnCountReal = 0;
   missedAI = 0;
   currentCombo = 0;
+  floatIndicators = [];
+  missFlashAlpha = 0;
   $("#combo-sticker").removeClass("pop-in");
   updateGameHud();
 
