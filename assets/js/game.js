@@ -1,6 +1,7 @@
 /* ─── timer / score ──────────────────────────────────────── */
 
 var gameTimerInterval = null;
+var gameOverTimeout = null;
 var gameElapsedSeconds = 0;
 var gameScore = 0;
 var gameOver = false;
@@ -246,6 +247,9 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
   const nx = Math.cos(worldAngle + Math.PI / 2);
   const ny = Math.sin(worldAngle + Math.PI / 2);
 
+  const isMistake = item.type !== "SLOP";
+
+  // Same split for both — a wrong cut additionally flashes the halves red briefly
   [-1, 1].forEach(function (side) {
     slicedPieces.push({
       image: item.image,
@@ -258,6 +262,9 @@ function sliceItem(item, idx, x1, y1, x2, y2) {
       localAngle: localAngle,
       side: side,
       alpha: 1.0,
+      fade: 0.022,
+      mistake: isMistake,
+      age: 0,
       halfW: halfW,
       halfH: halfH
     });
@@ -349,10 +356,24 @@ function loseLife() {
 function triggerGameOver() {
   if (gameOver) return;
   gameOver = true;
-  finishGame();
+
+  // Stop input, spawning and the timer instantly so the fatal move can't repeat,
+  // but keep the render loop alive briefly so the cut/flash is still visible.
+  if (gameTimerInterval) {
+    clearInterval(gameTimerInterval);
+    gameTimerInterval = null;
+  }
+  stopGameSlash();
+
+  if (gameOverTimeout) clearTimeout(gameOverTimeout);
+  gameOverTimeout = setTimeout(finishGame, 180);
 }
 
 function finishGame() {
+  if (gameOverTimeout) {
+    clearTimeout(gameOverTimeout);
+    gameOverTimeout = null;
+  }
   if (gameTimerInterval) {
     clearInterval(gameTimerInterval);
     gameTimerInterval = null;
@@ -435,7 +456,7 @@ function spawnMissIndicator(x) {
   var margin = gameCanvas.width * 0.12;
   var cx = Math.max(margin, Math.min(gameCanvas.width - margin, x));
   var cy = gameCanvas.height - gameCanvas.height * 0.16;
-  floatIndicators.push({ text: "MISSED!", x: cx, y: cy, age: 0, life: 950 });
+  floatIndicators.push({ text: "MISSED!", x: cx, y: cy, age: 0, life: 950, color: "#ff5470" });
   missFlashAlpha = 1;
 }
 
@@ -469,10 +490,11 @@ function updateAndDrawIndicators(deltaMs) {
     var y = f.y - t * (gameCanvas.height * 0.08);
     var alpha = t < 0.15 ? (t / 0.15) : 1 - (t - 0.15) / 0.85;
     var pop = 0.7 + Math.min(t * 4, 1) * 0.4;
+    var shakeX = f.shake ? Math.sin(f.age * 0.06) * baseFont * 0.18 * (1 - t) : 0;
 
     gameCtx.save();
     gameCtx.globalAlpha = Math.max(alpha, 0);
-    gameCtx.translate(f.x, y);
+    gameCtx.translate(f.x + shakeX, y);
     gameCtx.scale(pop, pop);
     gameCtx.textAlign = "center";
     gameCtx.textBaseline = "middle";
@@ -481,7 +503,7 @@ function updateAndDrawIndicators(deltaMs) {
     gameCtx.lineWidth = baseFont * 0.16;
     gameCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
     gameCtx.strokeText(f.text, 0, 0);
-    gameCtx.fillStyle = "#ff5470";
+    gameCtx.fillStyle = f.color || "#ff5470";
     gameCtx.fillText(f.text, 0, 0);
 
     gameCtx.restore();
@@ -576,7 +598,8 @@ function gameLoop(now) {
     p.y += p.vy * dt;
     p.vy += GRAVITY * 1.8 * dt;
     p.rotation += p.rotationSpeed * dt;
-    p.alpha -= 0.022 * dt;
+    p.alpha -= (p.fade || 0.022) * dt;
+    if (p.mistake) p.age += deltaMs;
 
     if (p.alpha <= 0 || p.y > gameCanvas.height + 300) {
       slicedPieces.splice(i, 1);
@@ -604,6 +627,20 @@ function gameLoop(now) {
     gameCtx.clip();
 
     drawCard(gameCtx, img, p.halfW, p.halfH);
+
+    // Wrong cut: light the halves up red. Stays solid while the scene is frozen
+    // on game over, otherwise fades out over ~320ms during normal play.
+    if (p.mistake) {
+      var FLASH_MS = 320;
+      var tint = gameOver ? 0.6 : (p.age < FLASH_MS ? 0.6 * (1 - p.age / FLASH_MS) : 0);
+      if (tint > 0) {
+        gameCtx.globalCompositeOperation = "source-atop";
+        gameCtx.fillStyle = "rgba(255, 25, 35, " + tint + ")";
+        gameCtx.fillRect(-p.halfW, -p.halfH, p.halfW * 2, p.halfH * 2);
+        gameCtx.globalCompositeOperation = "source-over";
+      }
+    }
+
     gameCtx.restore();
   }
 
@@ -907,6 +944,9 @@ function initGame() {
   var idle = document.getElementById("idle-music");
   if (idle) idle.pause();
 
+  if (gameOverTimeout) { clearTimeout(gameOverTimeout); gameOverTimeout = null; }
+  if (gameAnimationFrame) { cancelAnimationFrame(gameAnimationFrame); gameAnimationFrame = null; }
+
   gameCanvas = document.getElementById("game-canvas");
   if (gameCanvas) {
     gameCtx = gameCanvas.getContext("2d");
@@ -932,6 +972,7 @@ function initGame() {
   currentCombo = 0;
   floatIndicators = [];
   missFlashAlpha = 0;
+  if (gameOverTimeout) { clearTimeout(gameOverTimeout); gameOverTimeout = null; }
   $("#combo-sticker").removeClass("pop-in");
   updateGameHud();
 
