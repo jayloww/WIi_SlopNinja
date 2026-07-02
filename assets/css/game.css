@@ -171,25 +171,73 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: clamp(10px, 1.6vw, 20px);
 }
 
+/* Pixel-art heart drawn on a 9x9 grid via box-shadow (crisp, scalable) */
 .life-icon {
-  font-size: clamp(20px, 2.8vw, 28px);
+  --p: calc(clamp(40px, 6.8vw, 68px) / 9); /* heart height == timer height */
+  --hb: #e85aa6; /* border  — darker pink   */
+  --hf: #f9c9e6; /* fill    — light pink    */
+  --hh: #ffffff; /* highlight — bright spot */
+  --hs: #f078bd; /* shade   — mid pink      */
+  position: relative;
+  width: calc(var(--p) * 9);
+  height: calc(var(--p) * 9);
   line-height: 1;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+.life-icon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--p);
+  height: var(--p);
+  box-shadow:
+    calc(var(--p)*1) 0 0 0 var(--hb), calc(var(--p)*2) 0 0 0 var(--hb),
+    calc(var(--p)*6) 0 0 0 var(--hb), calc(var(--p)*7) 0 0 0 var(--hb),
+    0 calc(var(--p)*1) 0 0 var(--hb), calc(var(--p)*1) calc(var(--p)*1) 0 0 var(--hh),
+    calc(var(--p)*2) calc(var(--p)*1) 0 0 var(--hf), calc(var(--p)*3) calc(var(--p)*1) 0 0 var(--hb),
+    calc(var(--p)*5) calc(var(--p)*1) 0 0 var(--hb), calc(var(--p)*6) calc(var(--p)*1) 0 0 var(--hf),
+    calc(var(--p)*7) calc(var(--p)*1) 0 0 var(--hf), calc(var(--p)*8) calc(var(--p)*1) 0 0 var(--hb),
+    0 calc(var(--p)*2) 0 0 var(--hb), calc(var(--p)*1) calc(var(--p)*2) 0 0 var(--hh),
+    calc(var(--p)*2) calc(var(--p)*2) 0 0 var(--hf), calc(var(--p)*3) calc(var(--p)*2) 0 0 var(--hf),
+    calc(var(--p)*4) calc(var(--p)*2) 0 0 var(--hb), calc(var(--p)*5) calc(var(--p)*2) 0 0 var(--hf),
+    calc(var(--p)*6) calc(var(--p)*2) 0 0 var(--hf), calc(var(--p)*7) calc(var(--p)*2) 0 0 var(--hs),
+    calc(var(--p)*8) calc(var(--p)*2) 0 0 var(--hb),
+    0 calc(var(--p)*3) 0 0 var(--hb), calc(var(--p)*1) calc(var(--p)*3) 0 0 var(--hf),
+    calc(var(--p)*2) calc(var(--p)*3) 0 0 var(--hf), calc(var(--p)*3) calc(var(--p)*3) 0 0 var(--hf),
+    calc(var(--p)*4) calc(var(--p)*3) 0 0 var(--hf), calc(var(--p)*5) calc(var(--p)*3) 0 0 var(--hf),
+    calc(var(--p)*6) calc(var(--p)*3) 0 0 var(--hs), calc(var(--p)*7) calc(var(--p)*3) 0 0 var(--hs),
+    calc(var(--p)*8) calc(var(--p)*3) 0 0 var(--hb),
+    0 calc(var(--p)*4) 0 0 var(--hb), calc(var(--p)*1) calc(var(--p)*4) 0 0 var(--hf),
+    calc(var(--p)*2) calc(var(--p)*4) 0 0 var(--hf), calc(var(--p)*3) calc(var(--p)*4) 0 0 var(--hf),
+    calc(var(--p)*4) calc(var(--p)*4) 0 0 var(--hf), calc(var(--p)*5) calc(var(--p)*4) 0 0 var(--hf),
+    calc(var(--p)*6) calc(var(--p)*4) 0 0 var(--hs), calc(var(--p)*7) calc(var(--p)*4) 0 0 var(--hf),
+    calc(var(--p)*8) calc(var(--p)*4) 0 0 var(--hb),
+    calc(var(--p)*1) calc(var(--p)*5) 0 0 var(--hb), calc(var(--p)*2) calc(var(--p)*5) 0 0 var(--hf),
+    calc(var(--p)*3) calc(var(--p)*5) 0 0 var(--hf), calc(var(--p)*4) calc(var(--p)*5) 0 0 var(--hf),
+    calc(var(--p)*5) calc(var(--p)*5) 0 0 var(--hs), calc(var(--p)*6) calc(var(--p)*5) 0 0 var(--hs),
+    calc(var(--p)*7) calc(var(--p)*5) 0 0 var(--hb),
+    calc(var(--p)*2) calc(var(--p)*6) 0 0 var(--hb), calc(var(--p)*3) calc(var(--p)*6) 0 0 var(--hf),
+    calc(var(--p)*4) calc(var(--p)*6) 0 0 var(--hf), calc(var(--p)*5) calc(var(--p)*6) 0 0 var(--hs),
+    calc(var(--p)*6) calc(var(--p)*6) 0 0 var(--hb),
+    calc(var(--p)*3) calc(var(--p)*7) 0 0 var(--hb), calc(var(--p)*4) calc(var(--p)*7) 0 0 var(--hf),
+    calc(var(--p)*5) calc(var(--p)*7) 0 0 var(--hb),
+    calc(var(--p)*4) calc(var(--p)*8) 0 0 var(--hb);
 }
 
 .life-icon.filled {
-  color: #ff4d6d;
-  text-shadow: 0 0 8px rgba(255, 77, 109, 0.45);
+  filter: drop-shadow(0 0 calc(var(--p) * 0.8) rgba(232, 90, 166, 0.5));
   opacity: 1;
 }
 
 .life-icon.empty {
-  color: rgba(255, 255, 255, 0.25);
+  filter: grayscale(0.8) brightness(1.25);
   opacity: 0.4;
-  transform: scale(0.9);
+  transform: scale(0.88);
 }
 
 .life-icon.losing {
@@ -203,7 +251,7 @@
     opacity: 1;
   }
   40% {
-    transform: scale(1.15);
+    transform: scale(1.2);
     opacity: 1;
   }
   100% {
